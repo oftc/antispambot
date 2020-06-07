@@ -91,6 +91,24 @@ def join_cb(data, signal, signal_data):
     return w.WEECHAT_RC_OK
 
 
+def handle_command(user, where, message):
+    ''' UserStr *user* sent us str *message* that should be treated as a
+    command.  The caller verified this user has permission to command us and
+    that they sent us the message in a proper place. The str *where* indicates
+    the place where we we got it: either '#channel' if the cmd channel, or our
+    own nick. '''
+    # If it came in as a PM: *where* is our own nick and any response should go
+    # to the user's nick. If it came in via the command channel: any response
+    # should go to the command channel
+    dest = user.nick if where != cmd_chan() else cmd_chan()
+    words = message.split()
+    if not len(words):
+        return
+    if words[0].lower() == 'ping':
+        notice(dest, 'pong' if where == my_nick() else user.nick + ': pong')
+    return w.WEECHAT_RC_OK
+
+
 def privmsg_cb(data, signal, signal_data):
     ''' Callback for when we see a PRIVMSG '''
     # signal is for example: "oftc,irc_raw_in2_PRIVMSG"
@@ -119,6 +137,11 @@ def privmsg_cb(data, signal, signal_data):
     #######################
     # Determine what to do
     #######################
+    # If it is a PM to us or a message in our cmd channel, AND if the sender is
+    # one of our masters, handle it as a command
+    if (dest == my_nick() or dest == cmd_chan()) and user.nick in masters():
+        return handle_command(user, dest, message)
+    return w.WEECHAT_RC_OK
     # If looks like a comment, just stop
     if message.startswith('#'):
         return w.WEECHAT_RC_OK
@@ -134,7 +157,7 @@ def privmsg_cb(data, signal, signal_data):
             user.nick, dest, message)
         return w.WEECHAT_RC_OK
     # It's safe to act on this message as a command
-    recv_command(user, dest, message)
+    # recv_command(user, dest, message)
     return w.WEECHAT_RC_OK
 
 
@@ -173,31 +196,6 @@ def notice_cb(data, signal, signal_data):
     if tmb_mod.autovoice.enabled():
         tmb_mod.autovoice.notice_cb(sender, receiver, message)
     return w.WEECHAT_RC_OK
-
-
-def send_pong(user, chan_nick):
-    ''' Send a pong message to UserStr *user* in location str *chan_nick*. The
-    location will either be our the user's nick, if a private message, or a
-    channel name.
-
-    If it was a private message, just reponsd with 'pong'. If it was in a
-    channel, prefix the response with their nick. For example: 'pastly: pong'.
-    '''
-    if chan_nick[0] == '#':
-        msg = user.nick + ': pong'
-    else:
-        msg = 'pong'
-    return notice(chan_nick, msg)
-
-
-def recv_command(user, dest, message):
-    ''' Act on the command str *message* received from master UserStr *user* at
-    location str *dest*. The location will either be our nick or a channel
-    name, starting with a '#'. '''
-    # log('Message from master {}: {}', user.nick, message)
-    words = message.split()
-    if words[0].lower() == 'ping':
-        send_pong(user, dest if dest[0] == '#' else user.nick)
 
 
 def chanop_chans(chans, up):
@@ -266,7 +264,7 @@ if __name__ == '__main__':
 
     s = '{} v{} (re)loaded'.format(SCRIPT_NAME, SCRIPT_VERSION)
     log(s)
-    for opt, def_val in CONF.items():
-        log('{} => {}', opt, CONF[opt])
+    # for opt, def_val in CONF.items():
+    #     log('{} => {}', opt, CONF[opt])
 
 # vim: ts=4 sw=4 et
