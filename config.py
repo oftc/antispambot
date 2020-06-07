@@ -20,6 +20,9 @@ conf = {
     # Nicks from which we will accept commands (as private messages or in the
     # command channel)
     'masters': 'pastly',
+    # No matter what the context, if we see a PRIVMSG or a NOTICE from these
+    # nicks, we do nothing in response.
+    'ignores': 'weasel',
     # The full nick!user@host string for nickserv
     'nickserv_userstr': 'NickServ!services@services.oftc.net',
     # The autovoice module can, if enabled:

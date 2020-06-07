@@ -37,22 +37,32 @@ def my_nick():
 
 def cmd_chan():
     s = CONF['cmd_chan']
-    return s if s else None
+    return s.lower() if s else None
 
 
 def masters():
-    ''' Returns the list of my currently configured masters '''
-    return lcsv(CONF['masters'])
+    ''' Returns the list of my currently configured masters. Nicks are
+    normalized to lowercase '''
+    return lcsv(CONF['masters'].lower())
+
+
+def ignores():
+    ''' Returns the list of nicks which we ignore all PRIVMSG and NOTICE. Nicks
+    are normalized to lowercase. '''
+    return lcsv(CONF['ignores'].lower())
 
 
 def mod_chans():
-    ''' Returns the list of my currently configured channels to moderate '''
-    return lcsv(CONF['mod_chans'])
+    ''' Returns the list of my currently configured channels to moderate. Chans
+    are normalized to lowercase. '''
+    return lcsv(CONF['mod_chans'].lower())
 
 
 def log_chan():
+    ''' Return the currently configured logging channel, or None if not
+    configured. Chan is normalized to lowercase '''
     s = CONF['log_chan']
-    return s if s else None
+    return s.lower() if s else None
 
 
 def nickserv_user():
@@ -137,27 +147,21 @@ def privmsg_cb(data, signal, signal_data):
     #######################
     # Determine what to do
     #######################
+    # If it is a user to ignore, ignore them
+    if user.nick in ignores():
+        log('Ignore PRIVMSG from {}', user.nick)
+        return w.WEECHAT_RC_OK
     # If it is a PM to us or a message in our cmd channel, AND if the sender is
     # one of our masters, handle it as a command
     if (dest == my_nick() or dest == cmd_chan()) and user.nick in masters():
         return handle_command(user, dest, message)
-    return w.WEECHAT_RC_OK
-    # If looks like a comment, just stop
-    if message.startswith('#'):
+    # It wasn't a command. If it came in our cmd channel, then ignore
+    if dest == cmd_chan():
         return w.WEECHAT_RC_OK
-    # If not from a master, just stop
-    if user.nick not in masters():
-        log('Ignoring message from non-master {}: {}', user.nick, message)
+    # It wasn't a command. If it came in on something other than a moderated
+    # channel, ignore it
+    if dest not in mod_chans():
         return w.WEECHAT_RC_OK
-    # If not sent private to us or in the command channel, just stop
-    # cmd_chan() might be None, but this should be fine
-    if dest != my_nick() and dest != cmd_chan():
-        log(
-            'Ignoring message from master {} in non-cmd context {}: {}',
-            user.nick, dest, message)
-        return w.WEECHAT_RC_OK
-    # It's safe to act on this message as a command
-    # recv_command(user, dest, message)
     return w.WEECHAT_RC_OK
 
 
@@ -173,7 +177,8 @@ def notice_cb(data, signal, signal_data):
     # remove leading ':'
     assert signal_data.startswith(':')
     signal_data = signal_data[1:]
-    # parse out who sent this message (will always be a IRC server?)
+    # parse out who sent this message. It could be a 'n!u@h' str, but it could
+    # also be an IRC server if we are an op
     sender, signal_data = signal_data.split(' ', 1)
     sender = sender.lower()
     # trim cruft
@@ -190,6 +195,10 @@ def notice_cb(data, signal, signal_data):
     #######################
     # Determine what to do
     #######################
+    # If it is a user to ignore, ignore them.
+    if '!' in sender and sender[:sender.index('!')].lower() in ignores():
+        log('Ignore NOTICE from {}', sender)
+        return w.WEECHAT_RC_OK
     # If not to us, just stop
     if receiver != my_nick():
         return w.WEECHAT_RC_OK
