@@ -1,9 +1,8 @@
 import weechat
 # stdlib imports
-import calendar
-import time
 # stuff that comes with tormodbot itself
 from config import conf as CONF
+import tmb_mod.autovoice
 # other modules/packages
 from tmb_util.msg import notice, msg, join, mode
 from tmb_util.lcsv import lcsv
@@ -19,10 +18,6 @@ SCRIPT_LICENSE = 'MIT'
 SCRIPT_DESC = 'Help Tor Project moderate their many channels'
 
 CONNECTED = False
-
-# Queue of UserStr we want to ask nickserv about to see if they registered, and
-# if so, when they did so
-NICKSERV_TIME_REG_Q = []
 
 
 def log(s, *a, **kw):
@@ -90,13 +85,9 @@ def join_cb(data, signal, signal_data):
     # signal is for example: "freenode,irc_in2_join"
     # signal_data is IRC message, for example: ":nick!user@host JOIN :#channel"
     data = w.info_get_hashtable('irc_message_parse', {'message': signal_data})
-    user, _ = UserStr(data['host']), data['channel']
-    # log('{u} has joined {ch}', u=user.nick, ch=chan)
-    # TODO: be smarter about this. Don't need to ask if we've asked recently
-    # (in the last day?)
-    if user not in NICKSERV_TIME_REG_Q:
-        NICKSERV_TIME_REG_Q.append(user)
-        msg(nickserv_user().nick, 'info {}', user.nick)
+    user, chan = UserStr(data['host']), data['channel']
+    if tmb_mod.autovoice.enabled():
+        tmb_mod.autovoice.join_cb(user, chan)
     return w.WEECHAT_RC_OK
 
 
@@ -147,60 +138,6 @@ def privmsg_cb(data, signal, signal_data):
     return w.WEECHAT_RC_OK
 
 
-def handle_nickserv_message(message):
-    ''' Called when we've parsed a NOTICE from nickserv and might want to do
-    something with the information in this message. We don't know yet, and
-    might just want to ignore it. '''
-    global NICKSERV_TIME_REG_Q
-    # As of now, the only reason we want to hear back from nickserv is if we
-    # are checking the registration status of a nick. So check if there's any
-    # nicks in the queue.
-    # Note that just because a nick is registered, that doesn't mean the person
-    # using it is actually the one who owns that nick. The nick may not have
-    # ENFORCE set.
-    # Remove
-    if not len(NICKSERV_TIME_REG_Q):
-        return w.WEECHAT_RC_OK
-    # We do not currently use 'start of text' bytes to help us parse these
-    # messages, so strip them out so we don't get confused later.
-    message = message.replace('\x02', '')
-    if 'is not registered' in message:
-        # Get the second word:
-        #     "Nickname foooooo is not registered. The nickname you ..."
-        nick = message.split()[1].lower()
-        try:
-            idx = [u.nick for u in NICKSERV_TIME_REG_Q].index(nick)
-        except ValueError:
-            log(
-                'Told that {} is not registered, but we don\'t seem ' +
-                'to care.', nick)
-            log('{}', [ord(c) for c in nick])
-            return w.WEECHAT_RC_OK
-        if idx != 0:
-            log(
-                'Told that {} is not registered, but learned that out of ' +
-                'order by {}', nick, idx)
-        # Remove the nick
-        _ = NICKSERV_TIME_REG_Q.pop(idx)
-        log('{} is not registered', nick)
-    elif 'Time registered: ' in message:
-        # Get the words that are part of the date:
-        #   "Time registered:  Thu 13 Oct 2016 20:50:28 +0000 (3y ...)"
-        # I'm always seeing +0000 for the timezone, so I'm going to assume
-        # we're always told UTC
-        date_words = message.split()[2:8]
-        date_str = ' '.join(date_words)
-        day_month_year_time = ' '.join(date_str.split()[1:5])
-        log('{} "{}"', type(day_month_year_time), day_month_year_time)
-        ts = calendar.timegm(time.strptime(
-            day_month_year_time, '%d %b %Y %H:%M:%S'))
-        # Assume the latest nick in the queue is the one we got the answer for.
-        # Also remove it.
-        user = NICKSERV_TIME_REG_Q.pop(0)
-        log('{} registered {}', user.nick, ts)
-    return w.WEECHAT_RC_OK
-
-
 def notice_cb(data, signal, signal_data):
     ''' Callback for when we see a NOTICE '''
     # signal is for example: "oftc,irc_raw_in2_NOTICE"
@@ -233,34 +170,9 @@ def notice_cb(data, signal, signal_data):
     # If not to us, just stop
     if receiver != my_nick():
         return w.WEECHAT_RC_OK
-    if '!' in sender and '@' in sender:
-        # looks like a user. See if it's nickserv
-        user = UserStr(sender)
-        if user != nickserv_user():
-            return w.WEECHAT_RC_OK
-        return handle_nickserv_message(message)
+    if tmb_mod.autovoice.enabled():
+        tmb_mod.autovoice.notice_cb(sender, receiver, message)
     return w.WEECHAT_RC_OK
-    #########
-    # # If it looks like it's from a user, stop
-    # if '!' in sender and '@' in sender:
-    #     # BAD BAD BAD Logging about a user sending a notice will result in us
-    #     # sending a notice, which we will see and log about, etc. etc. Infinite
-    #     # loop. BAD BAD BAD. Do not log about users sending a notice lightly.
-    #     return w.WEECHAT_RC_OK
-    # # Always log stuff GanneffServ says
-    # if 'GanneffServ' in message:
-    #     log('{}', message)
-    #     return w.WEECHAT_RC_OK
-    # # If it looks like a notice about someone registering a nick, process it
-    # if 'registered nick' in message:
-    #     process_registered_nick_message(message)
-    #     return w.WEECHAT_RC_OK
-    # # It's a nick change message, maybe log who is changing nick
-    # if message.startswith('Nick change: From '):
-    #     process_nickchange_message(message)
-    # # log('{} => {}: {}', sender, receiver, message)
-    # # log('Unhandled notice {}', message)
-    # return w.WEECHAT_RC_OK
 
 
 def send_pong(user, chan_nick):
