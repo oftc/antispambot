@@ -6,6 +6,13 @@ TO CHANGE YOUR CONFIG. If you want to change your configuration, you should use
 weechat's /set command. For example:
 
     /set plugins.python.tormodbot.serv "freenode"
+
+If you want to add a configuration option, IT'S VALUE MUST BE A STRING. Boolean
+values are interpreted as per
+https://weechat.org/files/doc/stable/weechat_plugin_api.en.html#_config_string_to_boolean,
+i.e.:
+    - 1 if text is "true" ("on", "yes", "y", "true", "t", "1")
+    - 0 if text is "false" ("off", "no", "n", "false", "f", "0")
 '''
 conf = {
     # IRC server we're joining and on which all the channels are
@@ -45,8 +52,8 @@ conf = {
     'antiflood_enabled': 'off',
     # The maximum number of messages any one nick can send in a channel over
     # the course of msg_limit_seconds
-    'antiflood_msg_limit': 10,
+    'antiflood_msg_limit': '10',
     # If a nick sends msg_limit messages in this amount of time, it is
     # considered to be flooding
-    'antiflood_msg_limit_seconds': 30,
+    'antiflood_msg_limit_seconds': '30',
 }
