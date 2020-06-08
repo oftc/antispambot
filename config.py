@@ -32,6 +32,8 @@ conf = {
     'ignores': 'weasel',
     # The full nick!user@host string for nickserv
     'nickserv_userstr': 'NickServ!services@services.oftc.net',
+    # The full nick!user@host string for chanserv
+    'chanserv_userstr': 'ChanServ!services@services.oftc.net',
     # The autovoice module can, if enabled:
     # - auto +v users with a matching n!u@h string
     # - auto +v users who have registered with a matching n!u@h string at least
@@ -56,4 +58,11 @@ conf = {
     # If a nick sends msg_limit messages in this amount of time, it is
     # considered to be flooding
     'antiflood_msg_limit_seconds': '30',
+    # Comma-separated list of actions to take when a nick is detected as
+    # flooding. Assume for example the flooding user is
+    # pastly!~pastly@example.com. Possible actions are:
+    # - 'quiet-host': tell chanserv to +q *!*@example.com
+    # If you, the developer, want to add new actions, then add them to the
+    # Action enum in antiflood.py
+    'antiflood_actions': 'quiet_host',
 }

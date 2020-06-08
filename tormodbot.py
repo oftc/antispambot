@@ -22,13 +22,12 @@ CONNECTED = False
 
 
 def log(s, *a, **kw):
-    s = s.format(*a, **kw)
     # log to core window
-    w.prnt('', w.prefix('error') + s)
+    w.prnt('', w.prefix('error') + s.format(*a, **kw))
     # log to log channel
     if not log_chan():
         return
-    notice(log_chan(), s)
+    notice(log_chan(), s, *a, **kw)
 
 
 def my_nick():
@@ -69,6 +68,11 @@ def log_chan():
 def nickserv_user():
     ''' Returns UserStr of the configured nickserv '''
     return UserStr(CONF['nickserv_userstr'])
+
+
+def chanserv_user():
+    ''' Returns UserStr of the configured chanserv '''
+    return UserStr(CONF['chanserv_userstr'])
 
 
 def connected_cb(data, signal, signal_data):
@@ -152,7 +156,7 @@ def privmsg_cb(data, signal, signal_data):
     #######################
     # If it is a user to ignore, ignore them
     if user.nick in ignores():
-        log('Ignore PRIVMSG from {}', user.nick)
+        log('Ignore PRIVMSG from {} in {}', user.nick, dest)
         return w.WEECHAT_RC_OK
     # If it is a PM to us or a message in our cmd channel, AND if the sender is
     # one of our masters, handle it as a command
@@ -227,7 +231,7 @@ def chanop_chans(chans, up):
     True) otherwise deop ourself '''
     for chan in chans:
         if up:
-            msg('chanserv', 'op {} {}', chan, my_nick())
+            msg(chanserv_user().nick, 'op {} {}', chan, my_nick())
         else:
             mode(chan, '-o', my_nick())
 

@@ -1,11 +1,14 @@
 import weechat
 # stdlib imports
+from collections import deque
+import enum
+import time
 # stuff that comes with tormodbot itself
-from tormodbot import mod_chans, log
+import tormodbot as tmb
 # other modules/packages
 from tmb_util.tokenbucket import token_bucket
-# from tmb_util.lcsv import lcsv
-# from tmb_util.msg import msg, voice
+from tmb_util.lcsv import lcsv
+from tmb_util.msg import msg
 # from tmb_util.userstr import UserStr
 
 
@@ -25,6 +28,29 @@ TOKEN_BUCKETS = {}
 # TODO: Be able to update this function's parameters if weechat's config
 # changes
 TB_FUNC = None
+# A FIFO list of Actions we've recently made. This is used to not repeat
+# ourselves in case the flooder is able to send multiple messages after
+# crossing the "is flooding" threshold yet before we've stopped them.
+# Append Actions that you are taking to the RIGHT and cleanup old actions from
+# the LEFT.
+# The items in this queue are a tuple:
+#    (timestamp, Action, UserStr, '#channel')
+# If this fact changes, then _action_done_recently(...) needs to be updated.
+RECENT_ACTIONS = deque()
+# The RECENT_ACTIONS cleanup function will forgot Actions older than this
+# number of seconds.
+RECENT_SECS = 300
+
+
+class Action(enum.Enum):
+    ''' Actions we can take when a user floods.
+
+    The integer values are arbitrary and meaningless. I would use enum.auto(),
+    but weechat on Debian 10 (buster) comes with python 2.7 (via the
+    weechat-python package) and enum.auto() was added in 3.6.
+    '''
+    # tell chanserv to +q *!*@example.com
+    quiet_host = 'quiet_host'
 
 
 def enabled():
@@ -47,12 +73,15 @@ def privmsg_cb(user, receiver, message):
     # a little, etc. to avoid exhausting one nick's token bucket.
     global TOKEN_BUCKETS
     global TB_FUNC
+    global RECENT_ACTIONS
     # The first two are sanity checks: that the receiver is a non-empty string
     # and that it looks like a channel name.
     # The third check is that it is one of our moderated channels. We only care
     # about those.
     receiver = receiver.lower()
-    if not len(receiver) or receiver[0] != '#' or receiver not in mod_chans():
+    if not len(receiver) or \
+            receiver[0] != '#' or \
+            receiver not in tmb.mod_chans():
         return
     # Until we are able to "initialize" modules, we need to make sure here that
     # our TB_FUNC actually exists
@@ -67,7 +96,24 @@ def privmsg_cb(user, receiver, message):
     # Take a token from them and update their state
     wait_time, new_state = TB_FUNC(TOKEN_BUCKETS[receiver][user.nick])
     TOKEN_BUCKETS[receiver][user.nick] = new_state
-    log('{} {} {} {}', wait_time, new_state, user.nick, message)
+    # A positive wait_time indicates that they've run out of tokens, thus are
+    # flooding
+    if wait_time > 0:
+        # Get the configured list of Actions to take
+        actions = _actions()
+        tmb.log('{} is flooding {}', user, receiver)
+        # Do each Action that has not been done recently to this user in this
+        # channel
+        for a in actions:
+            if _action_done_recently(a, user, receiver):
+                tmb.log('{} done recently, skipping', a.name)
+                continue
+            RECENT_ACTIONS.append((time.time(), a, user, receiver))
+            tmb.log('Doing {} against {} in {}', a.name, user, receiver)
+            {
+                'quiet_host': _action_quiet_host,
+            }[a.name](user, receiver)
+    # tmb.log('{} {} {} {}', wait_time, new_state, user.nick, message)
 
 
 def _conf_key(s):
@@ -92,3 +138,28 @@ def _tb_rate():
     another token '''
     return _tb_size() /\
         float(w.config_get_plugin(_conf_key('msg_limit_seconds')))
+
+
+def _actions():
+    ''' The list of Actions we will take when we detect someone flooding '''
+    return [Action(s) for s in lcsv(w.config_get_plugin(_conf_key('actions')))]
+
+
+def _action_quiet_host(user, chan):
+    ''' Tell chanserv to quiet the UserStr user's host on channel chan '''
+    s = 'quiet {chan} add *!*@{host}'.format(chan=chan, host=user.host)
+    msg(tmb.chanserv_user().nick, s)
+
+
+def _action_done_recently(action, user, chan):
+    ''' Returns True if Action action has NOT been taken against UserStr user
+    in channel str chan recently, otherwise False '''
+    global RECENT_ACTIONS
+    # Cleanup RECENT_ACTIONS of any Action not recent anymore
+    now = time.time()
+    while len(RECENT_ACTIONS) and RECENT_ACTIONS[0][0] + RECENT_SECS < now:
+        RECENT_ACTIONS.popleft()
+    for ts, ac, u, c in RECENT_ACTIONS:
+        if (ac, u, c) == (action, user, chan):
+            return True
+    return False

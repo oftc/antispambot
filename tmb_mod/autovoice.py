@@ -4,7 +4,7 @@ import calendar
 import re
 import time
 # stuff that comes with tormodbot itself
-from tormodbot import log, nickserv_user, mod_chans
+import tormodbot as tmb
 # other modules/packages
 from tmb_util.lcsv import lcsv
 from tmb_util.msg import msg, voice
@@ -34,7 +34,7 @@ def notice_cb(sender, receiver, message):
         return
     user = UserStr(sender)
     # if it isn't nickserv, then we don't care
-    if user != nickserv_user():
+    if user != tmb.nickserv_user():
         return
     _handle_nickserv_message(message)
 
@@ -44,12 +44,12 @@ def join_cb(user, chan):
     the given channel '''
     global NICKSERV_TIME_REG_Q
     # If this isn't a channel we're moderating, then exit early
-    if chan not in mod_chans():
+    if chan not in tmb.mod_chans():
         return
     # If we always want to +v the nick, then do so
     for regex in _regex_always():
         if re.match(regex, str(user)):
-            log('Voice {} (always!) because matches {}', user, regex)
+            tmb.log('Voice {} (always!) because matches {}', user, regex)
             voice(chan, user.nick)
             return
     # Otherwise, maybe we want to +v the nick if they registered long enough
@@ -59,7 +59,7 @@ def join_cb(user, chan):
     # (in the last day?)
     if (user, chan) not in NICKSERV_TIME_REG_Q:
         NICKSERV_TIME_REG_Q.append((user, chan))
-        msg(nickserv_user().nick, 'info {}', user.nick)
+        msg(tmb.nickserv_user().nick, 'info {}', user.nick)
 
 
 def privmsg_cb(user, receiver, message):
@@ -129,17 +129,17 @@ def _handle_nickserv_message(message):
         try:
             idx = [u.nick for (u, _) in NICKSERV_TIME_REG_Q].index(nick)
         except ValueError:
-            log(
+            tmb.log(
                 'Told that {} is not registered, but we don\'t seem ' +
                 'to care.', nick)
             return
         if idx != 0:
-            log(
+            tmb.log(
                 'Told that {} is not registered, but learned that out of ' +
                 'order by {}', nick, idx)
         # Remove the nick
         _ = NICKSERV_TIME_REG_Q.pop(idx)
-        log('{} is not registered', nick)
+        tmb.log('{} is not registered', nick)
     elif 'Time registered: ' in message:
         # Assume the latest nick in the queue is the one we got the answer for.
         # Also remove it. Do this right away so that we always remove the nick
@@ -162,7 +162,7 @@ def _handle_nickserv_message(message):
         life = time.time() - ts
         life_str = _seconds_to_duration(life)
         if life >= _min_seconds():
-            log('{} registered {} ago, so voice', user.nick, life_str)
+            tmb.log('{} registered {} ago, so voice', user.nick, life_str)
             voice(chan, user.nick)
         else:
-            log('{} registered {} ago, so no voice', user.nick, life_str)
+            tmb.log('{} registered {} ago, so no voice', user.nick, life_str)
