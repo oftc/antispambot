@@ -3,6 +3,7 @@ import weechat
 # stuff that comes with tormodbot itself
 from config import conf as CONF
 import tmb_mod.autovoice
+import tmb_mod.antiflood
 # other modules/packages
 from tmb_util.msg import notice, msg, join, mode
 from tmb_util.lcsv import lcsv
@@ -98,6 +99,8 @@ def join_cb(data, signal, signal_data):
     user, chan = UserStr(data['host']), data['channel']
     if tmb_mod.autovoice.enabled():
         tmb_mod.autovoice.join_cb(user, chan)
+    if tmb_mod.antiflood.enabled():
+        tmb_mod.antiflood.join_cb(user, chan)
     return w.WEECHAT_RC_OK
 
 
@@ -155,13 +158,23 @@ def privmsg_cb(data, signal, signal_data):
     # one of our masters, handle it as a command
     if (dest == my_nick() or dest == cmd_chan()) and user.nick in masters():
         return handle_command(user, dest, message)
-    # It wasn't a command. If it came in our cmd channel, then ignore
+    ###########
+    # It wasn't a command at this point
+    ###########
+    # If it came in our cmd channel, then ignore
     if dest == cmd_chan():
         return w.WEECHAT_RC_OK
-    # It wasn't a command. If it came in on something other than a moderated
-    # channel, ignore it
+    # If it was a PM, then ignore
+    if dest == my_nick():
+        return w.WEECHAT_RC_OK
+    # If it came in on something other than a moderated channel, ignore it
     if dest not in mod_chans():
         return w.WEECHAT_RC_OK
+    # Tell our modules about this message
+    if tmb_mod.autovoice.enabled():
+        tmb_mod.autovoice.privmsg_cb(user, dest, message)
+    if tmb_mod.antiflood.enabled():
+        tmb_mod.antiflood.privmsg_cb(user, dest, message)
     return w.WEECHAT_RC_OK
 
 
@@ -204,6 +217,8 @@ def notice_cb(data, signal, signal_data):
         return w.WEECHAT_RC_OK
     if tmb_mod.autovoice.enabled():
         tmb_mod.autovoice.notice_cb(sender, receiver, message)
+    if tmb_mod.antiflood.enabled():
+        tmb_mod.antiflood.notice_cb(sender, receiver, message)
     return w.WEECHAT_RC_OK
 
 

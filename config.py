@@ -40,4 +40,13 @@ conf = {
     # How long ago the nick in question must have been registered with nickserv
     # in order for a positive regex match to result in the nick getting +v
     'autovoice_registered_seconds': '86400',
+    # The antiflood modlue can, if enabled:
+    # - detect slow floods where a nick slowly spams many messages
+    'antiflood_enabled': 'off',
+    # The maximum number of messages any one nick can send in a channel over
+    # the course of msg_limit_seconds
+    'antiflood_msg_limit': 10,
+    # If a nick sends msg_limit messages in this amount of time, it is
+    # considered to be flooding
+    'antiflood_msg_limit_seconds': 30,
 }

@@ -62,6 +62,10 @@ def join_cb(user, chan):
         msg(nickserv_user().nick, 'info {}', user.nick)
 
 
+def privmsg_cb(user, receiver, message):
+    pass
+
+
 def _seconds_to_duration(secs):
     ''' Take a number of seconds and return the amount of time passed as a
     string and measured in days/hours/minutes/seconds '''
