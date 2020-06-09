@@ -147,7 +147,9 @@ def _actions():
 
 def _action_quiet_host(user, chan):
     ''' Tell chanserv to quiet the UserStr user's host on channel chan '''
-    s = 'quiet {chan} add *!*@{host}'.format(chan=chan, host=user.host)
+    reason = 'Flooding (tmb auto)'
+    s = 'quiet {chan} add *!*@{host} {r}'.format(
+        chan=chan, host=user.host, r=reason)
     msg(tmb.chanserv_user().nick, s)
 
 
