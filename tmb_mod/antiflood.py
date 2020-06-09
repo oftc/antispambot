@@ -136,8 +136,8 @@ def _tb_size():
 def _tb_rate():
     ''' The amount of time, in seconds, that must pass before the user earns
     another token '''
-    return _tb_size() /\
-        float(w.config_get_plugin(_conf_key('msg_limit_seconds')))
+    return float(w.config_get_plugin(_conf_key('msg_limit_seconds'))) /\
+        _tb_size()
 
 
 def _actions():
