@@ -34,6 +34,13 @@ conf = {
     'nickserv_userstr': 'NickServ!services@services.oftc.net',
     # The full nick!user@host string for chanserv
     'chanserv_userstr': 'ChanServ!services@services.oftc.net',
+    # How many messages we can burst to the server. This must always be at
+    # least 1. Setting this to 1 means you can't burst at all.
+    'msg_burst': '5',
+    # How many milliseconds must pass between our messages to the server in
+    # steady state. To be safe, set this slightly higher than whatever the IRCd
+    # actually requires.
+    'msg_rate': '505',
     # The autovoice module can, if enabled:
     # - auto +v users with a matching n!u@h string
     # - auto +v users who have registered with a matching n!u@h string at least

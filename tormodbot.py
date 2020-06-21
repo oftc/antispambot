@@ -5,6 +5,7 @@ from config import conf as CONF
 import tmb_mod.autovoice
 import tmb_mod.antiflood
 # other modules/packages
+import tmb_util.cmdqueue as cmd_q
 from tmb_util.msg import notice, msg, join, mode
 from tmb_util.lcsv import lcsv
 from tmb_util.userstr import UserStr
@@ -73,6 +74,19 @@ def nickserv_user():
 def chanserv_user():
     ''' Returns UserStr of the configured chanserv '''
     return UserStr(CONF['chanserv_userstr'])
+
+
+def timer_cb(data, remaining_calls):
+    ''' Whenever a timer expires, this function should be called. If data is
+    set, then it was that module that set a timer that expired, so we should
+    hand control off to it. Otherwise it was us.
+    '''
+    if data == 'cmd_q':
+        return cmd_q.timer_cb()
+    log(
+        'timer_cb called, but no data arg, so don\'t know who to tell about '
+        'this.')
+    return w.WEECHAT_RC_OK
 
 
 def connected_cb(data, signal, signal_data):
@@ -276,6 +290,9 @@ if __name__ == '__main__':
             w.config_set_plugin(opt, def_val)
         else:
             CONF[opt] = w.config_get_plugin(opt)
+
+    # (re)init systems
+    cmd_q.initialize(int(CONF['msg_burst']), float(CONF['msg_rate'])/1000)
 
     w.hook_signal('irc_server_connected', 'connected_cb', '')
     w.hook_signal('irc_server_disconnected', 'connected_cb', '')
