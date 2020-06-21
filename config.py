@@ -32,7 +32,7 @@ ANTIFLOOD_MSG_LIMIT_SECONDS = '30'
 #: Assume for example the flooding user is
 #: pastly!~pastly@example.com. Possible actions are:
 #:
-#: - 'quiet-host': tell chanserv to +q *!*@example.com
+#: - 'quiet_host': tell chanserv to +q *!*@example.com
 #:
 #: If you, the developer, want to add new actions, then add them to the
 #: Action enum in :mod:`tmb_mod.antiflood`.
