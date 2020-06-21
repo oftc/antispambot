@@ -3,14 +3,34 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to TorModBot's documentation!
-=====================================
+TorModBot: a Weechat Python 3 plugin
+====================================
+
+Code
+----
+
+- https://gitlab.torproject.org/pastly/weechat-tormodbot
+
+Docs
+----
+
+- **This page**: `http://aftq7v7hdsht[...].onion
+  <http://aftq7v7hdshtliovsulccph7gbxkhqh2w7pqaiemv5xz7rhzdap7irid.onion>`_ AKA
+  https://tormodbot.pastly.xyz.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   USING
+   HACKING
+   License (MIT) <LICENSE>
 
+.. toctree::
+   :maxdepth: 3
+   :caption: Code:
+
+   modules
 
 Indices and tables
 ==================
