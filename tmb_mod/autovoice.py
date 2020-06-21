@@ -1,3 +1,15 @@
+''' Auto-voice module
+
+If enabled, the autovoice module can:
+
+- auto +v users with a matching ``nick!user@host`` string
+- auto +v users who have registered at least ``X`` seconds ago with a matching
+  ``nick!user@host`` string
+
+See the ``AUTOVOICE_*`` options in :mod:`config` for our configuration options.
+
+See :ref:`limits`, especially regarding cloaks.
+'''
 import weechat
 # stdlib imports
 import calendar

@@ -32,11 +32,24 @@ ANTIFLOOD_MSG_LIMIT_SECONDS = '30'
 #: Assume for example the flooding user is
 #: pastly!~pastly@example.com. Possible actions are:
 #:
-#: - 'quiet_host': tell chanserv to +q *!*@example.com
+#: - 'quiet_host': tell chanserv to +q \*!\*@example.com
 #:
 #: If you, the developer, want to add new actions, then add them to the
 #: Action enum in :mod:`tmb_mod.antiflood`.
 ANTIFLOOD_ACTIONS = 'quiet_host'
+
+#: Whether to enable the :mod:`tmb_mod.autovoice` module
+AUTOVOICE_ENABLED = 'off'
+#: How long ago the nick in question must have been registered with nickserv
+#: in order for a positive regex match to result in the nick getting +v
+AUTOVOICE_REGISTERED_SECONDS = '86400'
+#: Comma-separated list of regex strings that, if one matches the ``n!u@h``
+#: **and** the nick registered with nickserv at least
+#: :data:`AUTOVOICE_REGISTERED_SECONDS` ago, result in +v on the user
+AUTOVOICE_REGEX_REGISTERED = '.*'
+#: Comma-separated list of regex strings that, if one matches the ``n!u@h``,
+#: results in +v on the user
+AUTOVOICE_REGEX_ALWAYS = '.*!.*@pastly.netop.oftc.net'
 
 conf = {
     # IRC server we're joining and on which all the channels are
@@ -65,21 +78,10 @@ conf = {
     # steady state. To be safe, set this slightly higher than whatever the IRCd
     # actually requires.
     'msg_rate': '505',
-    # The autovoice module can, if enabled:
-    # - auto +v users with a matching n!u@h string
-    # - auto +v users who have registered with a matching n!u@h string at least
-    # X seconds ago
-    'autovoice_enabled': 'off',
-    # Comma-separated list of regex strings that, if one matches the n!u@h,
-    # result in +v on the user
-    'autovoice_regex_always': '.*!.*@pastly.netop.oftc.net',
-    # Comma-separated list of regex strings that, if one matches the n!u@h AND
-    # the nick is registered with nickserv at least X seconds ago, result in +v
-    # on the user
-    'autovoice_regex_registered': '.*',
-    # How long ago the nick in question must have been registered with nickserv
-    # in order for a positive regex match to result in the nick getting +v
-    'autovoice_registered_seconds': '86400',
+    'autovoice_enabled': AUTOVOICE_ENABLED,
+    'autovoice_regex_always': AUTOVOICE_REGEX_ALWAYS,
+    'autovoice_regex_registered': AUTOVOICE_REGEX_REGISTERED,
+    'autovoice_registered_seconds': AUTOVOICE_REGISTERED_SECONDS,
     'antiflood_enabled': ANTIFLOOD_ENABLED,
     'antiflood_msg_limit': ANTIFLOOD_MSG_LIMIT,
     'antiflood_msg_limit_seconds': ANTIFLOOD_MSG_LIMIT_SECONDS,

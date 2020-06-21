@@ -24,6 +24,7 @@ Docs
 
    USING
    HACKING
+   LIMITATIONS
    License (MIT) <LICENSE>
 
 .. toctree::
