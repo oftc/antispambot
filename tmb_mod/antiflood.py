@@ -1,3 +1,14 @@
+''' Anti-flood module
+
+If enabled,
+we keep a token bucket for every unique ``(user, channel)`` pair, and if the
+bucket runs out of tokens, we take some action(s) against the user.
+
+The :class:`Action` class lists all possible actions to take. For example,
+``quiet_host`` will mute the user's host in the channel they flooded.
+
+See the ``ANTIFLOOD_*`` options in :mod:`config` for our configuration options.
+'''
 import weechat
 # stdlib imports
 from collections import deque
@@ -14,42 +25,42 @@ from tmb_util.msg import msg
 
 # To make calling weechat stuff take fewer characters
 w = weechat
-# The name of this module (wow such good comment)
+#: The name of this module (wow such good comment)
 MOD_NAME = 'antiflood'
-# Store per-(chan, nick) token buckets that cause us to take action against the
-# speaker when they run out of tokens
+#: Store per-``(chan, nick)`` token buckets that cause us to take action
+#: against the speaker when they run out of tokens
 TOKEN_BUCKETS = {}
-# A function to call every time a user sends a message to take away a token
-# from their bucket. The function takes the user's state as an argument and
-# returns (wait_time, new_state). wait_time is the amount of time they need to
-# wait until they would have a non-zero number of tokens left (so if they
-# currently have tokens, wait_time is 0), and new_state is the user's updated
-# state that should be passed in next time.
-# TODO: Be able to update this function's parameters if weechat's config
-# changes
+#: Function to call every time a user sends a message to take away a token
+#: from their bucket. The function takes the user's state as an argument and
+#: returns ``(wait_time, new_state)``. ``wait_time`` is the amount of time they
+#: need to wait until they would have a non-zero number of tokens left (so if
+#: they currently have tokens, ``wait_time`` is 0), and ``new_state`` is the
+#: user's updated state that should be passed in next time.
+#:
+#: TODO: Be able to update this function's parameters if weechat's config
+#: changes
 TB_FUNC = None
-# A FIFO list of Actions we've recently made. This is used to not repeat
-# ourselves in case the flooder is able to send multiple messages after
-# crossing the "is flooding" threshold yet before we've stopped them.
-# Append Actions that you are taking to the RIGHT and cleanup old actions from
-# the LEFT.
-# The items in this queue are a tuple:
-#    (timestamp, Action, UserStr, '#channel')
-# If this fact changes, then _action_done_recently(...) needs to be updated.
+#: A FIFO list of :class:`Action`\s we've recently made. This is used to not
+#: repeat ourselves in case the flooder is able to send multiple messages after
+#: crossing the "is flooding" threshold before we've stopped them.
+#:
+#: Append Actions that you are taking to the **right** and cleanup old actions
+#: from the **left**.
+#:
+#: The items in this queue are a tuple::
+#:
+#:    (timestamp, Action, UserStr, '#channel')
+#:
+#: If this fact changes, then :meth:`_action_done_recently` needs to be updated
 RECENT_ACTIONS = deque()
-# The RECENT_ACTIONS cleanup function will forgot Actions older than this
-# number of seconds.
+#: The :data:`RECENT_ACTIONS` cleanup function will forgot :class:`Action`\s
+#: older than this number of seconds.
 RECENT_SECS = 300
 
 
 class Action(enum.Enum):
-    ''' Actions we can take when a user floods.
-
-    The integer values are arbitrary and meaningless. I would use enum.auto(),
-    but weechat on Debian 10 (buster) comes with python 2.7 (via the
-    weechat-python package) and enum.auto() was added in 3.6.
-    '''
-    # tell chanserv to +q *!*@example.com
+    ''' Actions we can take when a user floods.  '''
+    #: tell chanserv to +q \*!\*@example.com
     quiet_host = 'quiet_host'
 
 
@@ -60,14 +71,23 @@ def enabled():
 
 
 def notice_cb(sender, receiver, message):
+    ''' Main tormodbot code calls into this when we're enabled and have
+    received a notice message '''
     pass
 
 
 def join_cb(user, chan):
+    ''' Main tormodbot code calls into this when we're enabled and the given
+    :class:`tmb_util.userstr.UserStr` has joined the given channel '''
     pass
 
 
 def privmsg_cb(user, receiver, message):
+    ''' Main tormodbot code calls into this when we're enabled and the given
+    :class:`tmb_util.userstr.UserStr` has sent ``message`` (``str``) to
+    ``recevier`` (``str``). The receiver can be a channel ("#foo") or a nick
+    ("foo").
+    '''
     # TODO: notice nick changes somehow and update our TOKEN_BUCKET state to
     # use the new nick. That way people can't spam a little, change nick, spam
     # a little, etc. to avoid exhausting one nick's token bucket.

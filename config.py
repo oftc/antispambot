@@ -1,19 +1,43 @@
 '''
-This is the default configuration for tormodbot. After running tormodbot for
-the first time, these options will be saved in weechat's configuration system
-and to its plugins.conf file. AT THIS POINT EDITING THIS FILE WILL DO NOTHING
-TO CHANGE YOUR CONFIG. If you want to change your configuration, you should use
-weechat's /set command. For example:
+The default configuration for tormodbot.
+
+After running tormodbot for the first time, these options will be saved in
+weechat's configuration system and to its plugins.conf file. **At this point,
+editing this file will do nothing to change settings that exist in
+plugins.conf**.  If you want to change your configuration, you should use
+weechat's /set command. For example::
 
     /set plugins.python.tormodbot.serv "freenode"
 
-If you want to add a configuration option, IT'S VALUE MUST BE A STRING. Boolean
-values are interpreted as per
+If you want to add a configuration option, **It's value must be a string**.
+Boolean values are interpreted as per
 https://weechat.org/files/doc/stable/weechat_plugin_api.en.html#_config_string_to_boolean,
-i.e.:
-    - 1 if text is "true" ("on", "yes", "y", "true", "t", "1")
-    - 0 if text is "false" ("off", "no", "n", "false", "f", "0")
+i.e.::
+
+    1 if text is "true" ("on", "yes", "y", "true", "t", "1")
+    0 if text is "false" ("off", "no", "n", "false", "f", "0")
 '''
+
+#: Whether to enable the :mod:`tmb_mod.antiflood` module
+ANTIFLOOD_ENABLED = 'off'
+#: The maximum number of messages any one nick can send in a channel over
+#: the course of :data:`ANTIFLOOD_MSG_LIMIT_SECONDS`
+ANTIFLOOD_MSG_LIMIT = '10'
+#: If a nick sends :data:`ANTIFLOOD_MSG_LIMIT` messages in this amount of time,
+#: it is considered to be flooding
+ANTIFLOOD_MSG_LIMIT_SECONDS = '30'
+#: Comma-separated list of actions to take when a nick is detected as
+#: flooding.
+#:
+#: Assume for example the flooding user is
+#: pastly!~pastly@example.com. Possible actions are:
+#:
+#: - 'quiet-host': tell chanserv to +q *!*@example.com
+#:
+#: If you, the developer, want to add new actions, then add them to the
+#: Action enum in :mod:`tmb_mod.antiflood`.
+ANTIFLOOD_ACTIONS = 'quiet_host'
+
 conf = {
     # IRC server we're joining and on which all the channels are
     'serv': 'oftc',
@@ -56,20 +80,8 @@ conf = {
     # How long ago the nick in question must have been registered with nickserv
     # in order for a positive regex match to result in the nick getting +v
     'autovoice_registered_seconds': '86400',
-    # The antiflood modlue can, if enabled:
-    # - detect slow floods where a nick slowly spams many messages
-    'antiflood_enabled': 'off',
-    # The maximum number of messages any one nick can send in a channel over
-    # the course of msg_limit_seconds
-    'antiflood_msg_limit': '10',
-    # If a nick sends msg_limit messages in this amount of time, it is
-    # considered to be flooding
-    'antiflood_msg_limit_seconds': '30',
-    # Comma-separated list of actions to take when a nick is detected as
-    # flooding. Assume for example the flooding user is
-    # pastly!~pastly@example.com. Possible actions are:
-    # - 'quiet-host': tell chanserv to +q *!*@example.com
-    # If you, the developer, want to add new actions, then add them to the
-    # Action enum in antiflood.py
-    'antiflood_actions': 'quiet_host',
+    'antiflood_enabled': ANTIFLOOD_ENABLED,
+    'antiflood_msg_limit': ANTIFLOOD_MSG_LIMIT,
+    'antiflood_msg_limit_seconds': ANTIFLOOD_MSG_LIMIT_SECONDS,
+    'antiflood_actions': ANTIFLOOD_ACTIONS,
 }

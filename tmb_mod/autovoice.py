@@ -40,8 +40,8 @@ def notice_cb(sender, receiver, message):
 
 
 def join_cb(user, chan):
-    ''' Main tormodbot code calls into this when the given UserStr has joined
-    the given channel '''
+    ''' Main tormodbot code calls into this when we're enabled and the given
+    :class:`tmb_util.userstr.UserStr` has joined the given channel '''
     global NICKSERV_TIME_REG_Q
     # If this isn't a channel we're moderating, then exit early
     if chan not in tmb.mod_chans():
@@ -63,6 +63,11 @@ def join_cb(user, chan):
 
 
 def privmsg_cb(user, receiver, message):
+    ''' Main tormodbot code calls into this when we're enabled and the given
+    :class:`tmb_util.userstr.UserStr` has sent ``message`` (``str``) to
+    ``recevier`` (``str``). The receiver can be a channel ("#foo") or a nick
+    ("foo").
+    '''
     pass
 
 
