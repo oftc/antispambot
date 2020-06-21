@@ -5,6 +5,11 @@ writing ability.
 
 # Contents
 
+## `cmdqueue.py`
+
+Use this to queue and throttle the bot's outbound messages/commands so that it
+doesn't overload the IRCd and get itself forcibly disconnected.
+
 ## `lcsv.py`
 
 Function for converting between a `str` of comma-separated values and a `list`.
