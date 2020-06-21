@@ -18,6 +18,35 @@ i.e.::
     0 if text is "false" ("off", "no", "n", "false", "f", "0")
 '''
 
+#### Main configuration options ####
+#: IRC server we're joining and on which all the channels are
+SERV = 'oftc'
+#: Channel/user in which to log messages in addition to the core window
+LOG_CHAN = '#pastly-log'
+#: Channel from which to take commands. If empty, only takes commands from
+#: PM. We always take commands from PM.
+CMD_CHAN = '#pastly-log'
+#: Channels that we moderate
+MOD_CHANS = '#pastly-test,#pastly-test2'
+#: Nicks from which we will accept commands (as private messages or in the
+#: command channel)
+MASTERS = 'pastly'
+#: No matter what the context, if we see a PRIVMSG or a NOTICE from these
+#: nicks, we do nothing in response.
+IGNORES = 'weasel'
+#: The full nick!user@host string for nickserv
+NICKSERV_USERSTR = 'NickServ!services@services.oftc.net'
+#: The full nick!user@host string for chanserv
+CHANSERV_USERSTR = 'ChanServ!services@services.oftc.net'
+#: How many messages we can burst to the server. This must always be at
+#: least 1. Setting this to 1 means you can't burst at all.
+MSG_BURST = '5'
+#: How many milliseconds must pass between our messages to the server in
+#: steady state. To be safe, set this slightly higher than whatever the IRCd
+#: actually requires.
+MSG_RATE = '505'
+
+#### antiflood.py configuration options ####
 #: Whether to enable the :mod:`tmb_mod.antiflood` module
 ANTIFLOOD_ENABLED = 'off'
 #: The maximum number of messages any one nick can send in a channel over
@@ -38,6 +67,7 @@ ANTIFLOOD_MSG_LIMIT_SECONDS = '30'
 #: Action enum in :mod:`tmb_mod.antiflood`.
 ANTIFLOOD_ACTIONS = 'quiet_host'
 
+#### autovoice.py configuration options ####
 #: Whether to enable the :mod:`tmb_mod.autovoice` module
 AUTOVOICE_ENABLED = 'off'
 #: How long ago the nick in question must have been registered with nickserv
@@ -52,32 +82,16 @@ AUTOVOICE_REGEX_REGISTERED = '.*'
 AUTOVOICE_REGEX_ALWAYS = '.*!.*@pastly.netop.oftc.net'
 
 conf = {
-    # IRC server we're joining and on which all the channels are
-    'serv': 'oftc',
-    # Channel/user in which to log messages in addition to the core window
-    'log_chan': '#pastly-log',
-    # Channel from which to take commands. If empty, only takes commands from
-    # PM. We always take commands from PM.
-    'cmd_chan': '#pastly-log',
-    # Channels that we moderate
-    'mod_chans': '#pastly-test,#pastly-test2',
-    # Nicks from which we will accept commands (as private messages or in the
-    # command channel)
-    'masters': 'pastly',
-    # No matter what the context, if we see a PRIVMSG or a NOTICE from these
-    # nicks, we do nothing in response.
-    'ignores': 'weasel',
-    # The full nick!user@host string for nickserv
-    'nickserv_userstr': 'NickServ!services@services.oftc.net',
-    # The full nick!user@host string for chanserv
-    'chanserv_userstr': 'ChanServ!services@services.oftc.net',
-    # How many messages we can burst to the server. This must always be at
-    # least 1. Setting this to 1 means you can't burst at all.
-    'msg_burst': '5',
-    # How many milliseconds must pass between our messages to the server in
-    # steady state. To be safe, set this slightly higher than whatever the IRCd
-    # actually requires.
-    'msg_rate': '505',
+    'serv': SERV,
+    'log_chan': LOG_CHAN,
+    'cmd_chan': CMD_CHAN,
+    'mod_chans': MOD_CHANS,
+    'masters': MASTERS,
+    'ignores': IGNORES,
+    'nickserv_userstr': NICKSERV_USERSTR,
+    'chanserv_userstr': CHANSERV_USERSTR,
+    'msg_burst': MSG_BURST,
+    'msg_rate': MSG_RATE,
     'autovoice_enabled': AUTOVOICE_ENABLED,
     'autovoice_regex_always': AUTOVOICE_REGEX_ALWAYS,
     'autovoice_regex_registered': AUTOVOICE_REGEX_REGISTERED,
