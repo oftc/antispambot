@@ -84,8 +84,8 @@ def timer_cb(data, remaining_calls):
     if data == 'cmd_q':
         return cmd_q.timer_cb()
     log(
-        'timer_cb called, but no data arg, so don\'t know who to tell about '
-        'this.')
+        'timer_cb called with empty or unrecognized data arg "{}", so don\'t '
+        'know who to tell about this.', data)
     return w.WEECHAT_RC_OK
 
 
