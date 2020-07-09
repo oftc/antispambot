@@ -135,9 +135,11 @@ def handle_command(user, where, message):
     dest = user.nick if where != cmd_chan() else cmd_chan()
     words = message.split()
     if not len(words):
-        return
+        return w.WEECHAT_RC_OK
     if words[0].lower() == 'ping':
-        notice(dest, 'pong' if where == my_nick() else user.nick + ': pong')
+        notice(
+            dest, 'pong' if where == my_nick() else user.nick + ': pong')
+        return w.WEECHAT_RC_OK
     return w.WEECHAT_RC_OK
 
 
