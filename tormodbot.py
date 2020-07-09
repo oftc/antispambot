@@ -1,5 +1,6 @@
 import weechat
 # stdlib imports
+import sys
 # stuff that comes with tormodbot itself
 from config import conf as CONF
 import tmb_mod.autovoice
@@ -308,6 +309,8 @@ if __name__ == '__main__':
     # w.infolist_free(ilist)
 
     s = '{} v{} (re)loaded'.format(SCRIPT_NAME, SCRIPT_VERSION)
+    log(s)
+    s = 'Using: Python {}'.format(sys.version.split('\n')[0])
     log(s)
     # for opt, def_val in CONF.items():
     #     log('{} => {}', opt, CONF[opt])
