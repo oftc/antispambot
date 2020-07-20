@@ -18,7 +18,7 @@ i.e.::
     0 if text is "false" ("off", "no", "n", "false", "f", "0")
 '''
 
-#### Main configuration options ####
+# ### Main configuration options ####
 #: IRC server we're joining and on which all the channels are
 SERV = 'oftc'
 #: Channel/user in which to log messages in addition to the core window
@@ -46,7 +46,7 @@ MSG_BURST = '5'
 #: actually requires.
 MSG_RATE = '505'
 
-#### antiflood.py configuration options ####
+# ### antiflood.py configuration options ####
 #: Whether to enable the :mod:`tmb_mod.antiflood` module
 ANTIFLOOD_ENABLED = 'off'
 #: The maximum number of messages any one nick can send in a channel over
@@ -67,7 +67,7 @@ ANTIFLOOD_MSG_LIMIT_SECONDS = '30'
 #: Action enum in :mod:`tmb_mod.antiflood`.
 ANTIFLOOD_ACTIONS = 'quiet_host'
 
-#### autovoice.py configuration options ####
+# ### autovoice.py configuration options ####
 #: Whether to enable the :mod:`tmb_mod.autovoice` module
 AUTOVOICE_ENABLED = 'off'
 #: How long ago the nick in question must have been registered with nickserv
