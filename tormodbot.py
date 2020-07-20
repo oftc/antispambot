@@ -5,6 +5,7 @@ import sys
 from config import conf as CONF
 import tmb_mod.autovoice
 import tmb_mod.antiflood
+import tmb_mod.badwords
 # other modules/packages
 import tmb_util.cmdqueue as cmd_q
 from tmb_util.msg import notice, msg, join, mode
@@ -120,6 +121,8 @@ def join_cb(data, signal, signal_data):
         tmb_mod.autovoice.join_cb(user, chan)
     if tmb_mod.antiflood.enabled():
         tmb_mod.antiflood.join_cb(user, chan)
+    if tmb_mod.badwords.enabled():
+        tmb_mod.badwords.join_cb(user, chan)
     return w.WEECHAT_RC_OK
 
 
@@ -196,6 +199,8 @@ def privmsg_cb(data, signal, signal_data):
         tmb_mod.autovoice.privmsg_cb(user, dest, message)
     if tmb_mod.antiflood.enabled():
         tmb_mod.antiflood.privmsg_cb(user, dest, message)
+    if tmb_mod.badwords.enabled():
+        tmb_mod.badwords.privmsg_cb(user, dest, message)
     return w.WEECHAT_RC_OK
 
 
@@ -240,6 +245,8 @@ def notice_cb(data, signal, signal_data):
         tmb_mod.autovoice.notice_cb(sender, receiver, message)
     if tmb_mod.antiflood.enabled():
         tmb_mod.antiflood.notice_cb(sender, receiver, message)
+    if tmb_mod.badwords.enabled():
+        tmb_mod.badwords.notice_cb(sender, receiver, message)
     return w.WEECHAT_RC_OK
 
 

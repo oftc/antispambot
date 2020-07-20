@@ -81,6 +81,24 @@ AUTOVOICE_REGEX_REGISTERED = '.*'
 #: results in +v on the user
 AUTOVOICE_REGEX_ALWAYS = '.*!.*@pastly.netop.oftc.net'
 
+# ### badwords.py configuration options ####
+#: Whether to enable the :mod:`tmb_mod.badwords` module
+BADWORDS_ENABLED = 'on'
+#: Comma-separated list of bad words
+BADWORDS_BADWORDS = ''
+#: Comma-separated list of actions to take when a nick is detected as having
+#: said a bad word.
+#:
+#: Assume for example user is
+#: pastly!~pastly@example.com. Possible actions are:
+#:
+#: - 'quiet_nick': tell chanserv to +q pastly!\*@\*
+#:
+#: If you, the developer, want to add new actions, then add them to the
+#: Action enum in :mod:`tmb_mod.badwords`.
+BADWORDS_ACTIONS = 'quiet_nick'
+
+
 conf = {
     'serv': SERV,
     'log_chan': LOG_CHAN,
@@ -100,4 +118,7 @@ conf = {
     'antiflood_msg_limit': ANTIFLOOD_MSG_LIMIT,
     'antiflood_msg_limit_seconds': ANTIFLOOD_MSG_LIMIT_SECONDS,
     'antiflood_actions': ANTIFLOOD_ACTIONS,
+    'badwords_enabled': BADWORDS_ENABLED,
+    'badwords_badwords': BADWORDS_BADWORDS,
+    'badwords_actions': BADWORDS_ACTIONS,
 }
