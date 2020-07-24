@@ -112,6 +112,12 @@ HELLO_NEW_JOINS = '100'
 #: After this many messages in a channel, a user can send a "hello?" message
 #: without us sending an automated response
 HELLO_NEW_MSGS = '2'
+#: If enabled, **anyone** in a moderated chan with a configured automated
+#: response can say '!hello' and get the response for that channel printed
+HELLO_MANUAL_ENABLED = 'on'
+#: The amount of time, in seconds, that must pass before we will send our
+#: autoreponse in a a specific channel again
+HELLO_INTERVAL = '60'
 
 
 conf = {
@@ -141,4 +147,6 @@ conf = {
     'hello_hello_words': HELLO_HELLO_WORDS,
     'hello_new_joins': HELLO_NEW_JOINS,
     'hello_new_msgs': HELLO_NEW_MSGS,
+    'hello_manual_enabled': HELLO_MANUAL_ENABLED,
+    'hello_interval': HELLO_INTERVAL,
 }

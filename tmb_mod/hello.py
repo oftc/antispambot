@@ -38,6 +38,9 @@ w = weechat
 #: sqlite3 database for this module. Use :meth:`db_fname` to get the real full
 #: path; this here is relative to this module's data directory
 DB_FNAME = 'data.db'
+#: Keep track of last time we sent a manual autoreponse in each channel so we
+#: don't spam.
+LAST_RESPONSE = {}
 
 
 def enabled():
@@ -74,6 +77,10 @@ def new_msgs():
     ''' Return maximum number of messages in a channel we can see from a nick
     and still consider the nick a new user '''
     return int(w.config_get_plugin(_conf_key('new_msgs')))
+
+
+def interval():
+    return int(w.config_get_plugin(_conf_key('interval')))
 
 
 def response_for_chan(chan):
@@ -160,9 +167,52 @@ def privmsg_cb(user, receiver, message):
     if not response:
         # tmb.log('No response for {}', receiver)
         return
+    # If we sent something to this channel too recently, don't let ourselves
+    # spam
+    if _too_soon(receiver):
+        tmb.log('It\'s too soon to autorespond in {} again', receiver)
+        return
+    # Okay we should do something about this message. Act differently based on
+    # what type of message it looks like
+    if _is_manual_command(message):
+        _handle_manual_command(user, receiver, message)
+        return
+    if _seems_like_hello_msg(message):
+        _handle_hello_msg(user, receiver, message)
+        return
+
+
+def _handle_manual_command(user, chan, message):
+    # should have been checked already
+    if not _is_manual_command(message):
+        return
+    words = message.lower().strip().split()
+    # If we don't have a configured response for this channel, then there's no
+    # reason going any farther, because we have nothing to say.
+    response = response_for_chan(chan)
+    if not response:
+        # tmb.log('No response for {}', receiver)
+        return
+    # If there's a nick in the !hello command like '!hello pastly', then direct
+    # the response to that nick
+    if len(words) == 2:
+        response = '{}: {}'.format(words[1], response)
+    notice(chan, response)
+    global LAST_RESPONSE
+    LAST_RESPONSE[chan] = time.time()
+
+
+def _handle_hello_msg(user, chan, message):
+    ''' *message* has been determined to be a "hello?" type message. Handle our
+    response to that as necessary '''
+    # If no response for this channel, don't do anything. This should have been
+    # already checked, but check again
+    response = response_for_chan(chan)
+    if not response:
+        return
     # If this user should be ignored, return early
-    if _should_ignore(user.nick, receiver):
-        # tmb.log('{} should be ignored in {}', user.nick, receiver)
+    if _should_ignore(user.nick, chan):
+        # tmb.log('{} should be ignored in {}', user.nick, chan)
         return
     # If the message itself doesn't seem like a "hello?" type message, return
     # early
@@ -171,13 +221,15 @@ def privmsg_cb(user, receiver, message):
         return
     # If the user's history does not suggest they need an automated response,
     # return early
-    if not _seems_like_new_user(user.nick, receiver):
+    if not _seems_like_new_user(user.nick, chan):
         # tmb.log('{} is not a new user', user.nick)
         return
     # Yup. We should send the automated response.
     response = '{}: {}'.format(user.nick, response)
-    notice(receiver, response)
-    _update_ignore_table(user.nick, receiver, True)
+    notice(chan, response)
+    global LAST_RESPONSE
+    LAST_RESPONSE[chan] = time.time()
+    _update_ignore_table(user.nick, chan, True)
     return
 
 
@@ -304,3 +356,26 @@ def _should_ignore(nick, chan):
             should_ignore = not not row['ignore']
     db_conn.close()
     return should_ignore
+
+
+def _is_manual_command(message):
+    message = message.lower().strip()
+    words = message.split()
+    # Either '!hello' or '!hello pastly' should be the message
+    if len(words) != 1 and len(words) != 2:
+        return False
+    return words[0] == '!hello'
+
+
+def _too_soon(chan):
+    ''' Return whether or not it's too soon to send the automated response on
+    *chan* again '''
+    global LAST_RESPONSE
+    if chan not in LAST_RESPONSE:
+        # no record of saying our response in this channel, so not too soon
+        return False
+    now = time.time()
+    if LAST_RESPONSE[chan] + interval() > now:
+        # Not enough time has passed, so too soon
+        return True
+    return False
