@@ -105,7 +105,7 @@ HELLO_ENABLED = 'off'
 HELLO_MSG_MAX_LEN = '20'
 #: Comma-separated list of strings that, if found in a message, indicate the
 #: message is a "hello?" message
-HELLO_HELLO_WORDS = 'hi,hello,test,help,noob,guys'
+HELLO_HELLO_WORDS = 'hi,hello,test,help,noob,guys,anyone'
 #: After this many joins in a channel, a user can send a "hello?" message
 #: without us sending an automated response
 HELLO_NEW_JOINS = '100'
