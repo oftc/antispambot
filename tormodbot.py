@@ -166,6 +166,18 @@ def handle_command(user, where, message):
         notice(dest, 'Okay. Be right back!')
         reconnect(serv())
         return w.WEECHAT_RC_OK
+    elif words[0].lower() == 'mode':
+        # must have 'mode' 'chan/nick' and 'flags' at least, but could have
+        # arguments for flags as well
+        if len(words) < 3:
+            log('Invalid mode command from {}: /{}', user.nick, message)
+            return w.WEECHAT_RC_OK
+        chan_or_nick = words[1]
+        flags = words[2]
+        args = [] if len(words) == 3 else words[3:]
+        log('Executing "/{}" on behalf of {}', message, user.nick)
+        mode(chan_or_nick, flags, *args)
+        return w.WEECHAT_RC_OK
     return w.WEECHAT_RC_OK
 
 
