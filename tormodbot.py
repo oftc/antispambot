@@ -199,7 +199,7 @@ def privmsg_cb(data, signal, signal_data):
     #######################
     # If it is a user to ignore, ignore them
     if user.nick in ignores():
-        log('Ignore PRIVMSG from {} in {}', user.nick, dest)
+        # log('Ignore PRIVMSG from {} in {}', user.nick, dest)
         return w.WEECHAT_RC_OK
     # If it is a PM to us or a message in our cmd channel, AND if the sender is
     # one of our masters, handle it as a command
