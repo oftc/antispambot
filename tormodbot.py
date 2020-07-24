@@ -8,7 +8,7 @@ import tmb_mod.antiflood
 import tmb_mod.badwords
 # other modules/packages
 import tmb_util.cmdqueue as cmd_q
-from tmb_util.msg import notice, msg, join, mode
+from tmb_util.msg import notice, msg, join, mode, reconnect
 from tmb_util.lcsv import lcsv
 from tmb_util.userstr import UserStr
 
@@ -33,9 +33,14 @@ def log(s, *a, **kw):
     notice(log_chan(), s, *a, **kw)
 
 
+def serv():
+    ''' Returns the configured server '''
+    return CONF['serv']
+
+
 def my_nick():
     ''' Returns my current nick on the configured server '''
-    return w.info_get('irc_nick', CONF['serv'])
+    return w.info_get('irc_nick', serv())
 
 
 def cmd_chan():
@@ -142,6 +147,10 @@ def handle_command(user, where, message):
     if words[0].lower() == 'ping':
         notice(
             dest, 'pong' if where == my_nick() else user.nick + ': pong')
+        return w.WEECHAT_RC_OK
+    elif words[0].lower() == 'reconnect':
+        notice(dest, 'Okay. Be right back!')
+        reconnect(serv())
         return w.WEECHAT_RC_OK
     return w.WEECHAT_RC_OK
 

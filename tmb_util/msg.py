@@ -72,6 +72,11 @@ def voices(chan, nicks):
         i += MAX
 
 
+def reconnect(server):
+    ''' Send the reconnect command with the given *server* '''
+    return _send('/reconnect ' + server)
+
+
 def _send(s):
     cmd_q.send(s)
     # return w.command('', s)
