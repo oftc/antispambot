@@ -5,7 +5,7 @@ After running tormodbot for the first time, these options will be saved in
 weechat's configuration system and to its plugins.conf file. **At this point,
 editing this file will do nothing to change settings that exist in
 plugins.conf**.  If you want to change your configuration, you should use
-weechat's /set command. For example::
+weechat's ``/set`` command. For example::
 
     /set plugins.python.tormodbot.serv "freenode"
 
@@ -98,6 +98,21 @@ BADWORDS_BADWORDS = ''
 #: Action enum in :mod:`tmb_mod.badwords`.
 BADWORDS_ACTIONS = 'quiet_nick'
 
+# ### hello.py configuration options ####
+#: Whether to enable the :mod:`tmb_mod.hello` module
+HELLO_ENABLED = 'off'
+#: If a message is longer than this, assume it is not a "hello?" message
+HELLO_MSG_MAX_LEN = '20'
+#: Comma-separated list of strings that, if found in a message, indicate the
+#: message is a "hello?" message
+HELLO_HELLO_WORDS = 'hi,hello,test,help,noob,guys'
+#: After this many joins in a channel, a user can send a "hello?" message
+#: without us sending an automated response
+HELLO_NEW_JOINS = '100'
+#: After this many messages in a channel, a user can send a "hello?" message
+#: without us sending an automated response
+HELLO_NEW_MSGS = '2'
+
 
 conf = {
     'serv': SERV,
@@ -121,4 +136,9 @@ conf = {
     'badwords_enabled': BADWORDS_ENABLED,
     'badwords_badwords': BADWORDS_BADWORDS,
     'badwords_actions': BADWORDS_ACTIONS,
+    'hello_enabled': HELLO_ENABLED,
+    'hello_msg_max_len': HELLO_MSG_MAX_LEN,
+    'hello_hello_words': HELLO_HELLO_WORDS,
+    'hello_new_joins': HELLO_NEW_JOINS,
+    'hello_new_msgs': HELLO_NEW_MSGS,
 }

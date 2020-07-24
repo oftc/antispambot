@@ -1,11 +1,13 @@
 import weechat
 # stdlib imports
+import os
 import sys
 # stuff that comes with tormodbot itself
 from config import conf as CONF
 import tmb_mod.autovoice
 import tmb_mod.antiflood
 import tmb_mod.badwords
+import tmb_mod.hello
 # other modules/packages
 import tmb_util.cmdqueue as cmd_q
 from tmb_util.msg import notice, msg, join, mode, reconnect
@@ -83,6 +85,16 @@ def chanserv_user():
     return UserStr(CONF['chanserv_userstr'])
 
 
+def _homedir():
+    ''' Returns weechat's home directory '''
+    return w.info_get('weechat_dir', '')
+
+
+def datadir():
+    ''' Returns tormodbot's data directory '''
+    return os.path.join(_homedir(), 'tmb_data')
+
+
 def timer_cb(data, remaining_calls):
     ''' Whenever a timer expires, this function should be called. If data is
     set, then it was that module that set a timer that expired, so we should
@@ -128,6 +140,8 @@ def join_cb(data, signal, signal_data):
         tmb_mod.antiflood.join_cb(user, chan)
     if tmb_mod.badwords.enabled():
         tmb_mod.badwords.join_cb(user, chan)
+    if tmb_mod.hello.enabled():
+        tmb_mod.hello.join_cb(user, chan)
     return w.WEECHAT_RC_OK
 
 
@@ -210,6 +224,8 @@ def privmsg_cb(data, signal, signal_data):
         tmb_mod.antiflood.privmsg_cb(user, dest, message)
     if tmb_mod.badwords.enabled():
         tmb_mod.badwords.privmsg_cb(user, dest, message)
+    if tmb_mod.hello.enabled():
+        tmb_mod.hello.privmsg_cb(user, dest, message)
     return w.WEECHAT_RC_OK
 
 
@@ -256,6 +272,8 @@ def notice_cb(data, signal, signal_data):
         tmb_mod.antiflood.notice_cb(sender, receiver, message)
     if tmb_mod.badwords.enabled():
         tmb_mod.badwords.notice_cb(sender, receiver, message)
+    if tmb_mod.hello.enabled():
+        tmb_mod.hello.notice_cb(sender, receiver, message)
     return w.WEECHAT_RC_OK
 
 
@@ -303,6 +321,9 @@ if __name__ == '__main__':
             SCRIPT_DESC, '', ''):
         exit(1)
 
+    # ensure files/dirs exist
+    w.mkdir(datadir(), 0o755)
+
     # set default options
     for opt, def_val in CONF.items():
         if not w.config_is_set_plugin(opt):
@@ -312,6 +333,7 @@ if __name__ == '__main__':
 
     # (re)init systems
     cmd_q.initialize(int(CONF['msg_burst']), float(CONF['msg_rate'])/1000)
+    tmb_mod.hello.initialize()
 
     w.hook_signal('irc_server_connected', 'connected_cb', '')
     w.hook_signal('irc_server_disconnected', 'connected_cb', '')
