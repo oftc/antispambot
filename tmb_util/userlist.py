@@ -12,12 +12,18 @@ from tmb_util.userstr import UserStr
 D = {}
 # To make calling weechat stuff take fewer characters
 w = weechat
-#: Weechat timer hook on our reoccuring event on refreshing all nick!user@host
+#: Weechat timer hook on our reoccurring event on refreshing all nick!user@host
 #: that we know about.
 REFRESH_TIMER_HOOK = None
-#: Internval, in seconds, on our complete refresh of all nick!user@host strings
-#: we know about.
-REFRESH_TIMER_INTERVAL = 86400
+#: The initial and minimum interval used, in seconds
+REFRESH_TIMER_INTERVAL_MIN = 10
+#: The next interval to use, in seconds
+REFRESH_TIMER_INTERVAL = REFRESH_TIMER_INTERVAL_MIN
+#: Target interval, in seconds, on our complete refresh of all nick!user@host
+#: strings we know about. When in steady state and not manually refreshing, we
+#: double our interval repeatedly until it is more than this, at which point
+#: we use this.
+REFRESH_TIMER_INTERVAL_MAX = 86400
 
 
 def _monitored_chans():
@@ -61,7 +67,7 @@ def join_cb(user, chan):
         # How did we not know about this channel??? We need to figure out what
         # other nicks are in this channel, and perhaps what other channels we
         # don't know about. Schedule a new refresh ASAP
-        _schedule_next(1)
+        _schedule_next(REFRESH_TIMER_INTERVAL_MIN)
         return
     assert chan in D
     assert isinstance(user, UserStr)
@@ -82,17 +88,17 @@ def part_cb(user, chan):
 
 def initialize():
     _set_options()
-    _schedule_next(10)
+    _schedule_next(REFRESH_TIMER_INTERVAL_MIN)
 
 
 def connect_cb():
     ''' Called whenever we have connected to the server '''
-    _schedule_next(10)
+    _schedule_next(REFRESH_TIMER_INTERVAL_MIN)
 
 
 def timer_cb():
     _reload_from_nicklists()
-    _schedule_next()
+    _schedule_next(REFRESH_TIMER_INTERVAL)
     return w.WEECHAT_RC_OK
 
 
@@ -131,12 +137,19 @@ def _reload_from_nicklists():
         sum([len(_) for _ in D.values()]), len(chans), time_end - time_start)
 
 
-def _schedule_next(after=REFRESH_TIMER_INTERVAL):
+def _schedule_next(after):
     ''' Schedule our timer callback to be called after *after* seconds from
     now. If there is a current callback scheduled, cancel it. '''
+    global REFRESH_TIMER_INTERVAL
+    global REFRESH_TIMER_INTERVAL_MAX
     global REFRESH_TIMER_HOOK
     if REFRESH_TIMER_HOOK:
         w.unhook(REFRESH_TIMER_HOOK)
+        REFRESH_TIMER_HOOK = None
+    # Double the interval with which we call our timer_cb until it reaches the
+    # max acceptable interval
+    REFRESH_TIMER_INTERVAL = min(
+        2 * after, REFRESH_TIMER_INTERVAL_MAX)
     tmb.log(
         'Scheduling next total refresh of all known n!u@h in {} seconds',
         after)
