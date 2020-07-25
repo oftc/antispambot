@@ -85,6 +85,11 @@ def initialize():
     _schedule_next(10)
 
 
+def connect_cb():
+    ''' Called whenever we have connected to the server '''
+    _schedule_next(10)
+
+
 def timer_cb():
     _reload_from_nicklists()
     _schedule_next()

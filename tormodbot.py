@@ -127,6 +127,8 @@ def connected_cb(data, signal, signal_data):
             join(log_chan())
         # make sure we're op in all the modding chans
         chanop_chans(mod_chans(), True)
+        # make sure we know about all users in all chans
+        userlist.connect_cb()
     return w.WEECHAT_RC_OK
 
 
