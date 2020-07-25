@@ -29,3 +29,6 @@ class UserStr:
     @property
     def host(self):
         return self._host.lower()
+
+    def __hash__(self):
+        return hash('{}!{}@{}'.format(self._nick, self._user, self._host))

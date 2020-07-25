@@ -10,6 +10,7 @@ import tmb_mod.badwords
 import tmb_mod.hello
 # other modules/packages
 import tmb_util.cmdqueue as cmd_q
+from tmb_util import userlist
 from tmb_util.msg import notice, msg, join, mode, reconnect
 from tmb_util.lcsv import lcsv
 from tmb_util.userstr import UserStr
@@ -102,6 +103,8 @@ def timer_cb(data, remaining_calls):
     '''
     if data == 'cmd_q':
         return cmd_q.timer_cb()
+    elif data == 'userlist':
+        return userlist.timer_cb()
     log(
         'timer_cb called with empty or unrecognized data arg "{}", so don\'t '
         'know who to tell about this.', data)
@@ -129,11 +132,12 @@ def connected_cb(data, signal, signal_data):
 
 def join_cb(data, signal, signal_data):
     ''' Callback for when we see a JOIN '''
-    global NICKSERV_TIME_REG_Q
     # signal is for example: "freenode,irc_in2_join"
     # signal_data is IRC message, for example: ":nick!user@host JOIN :#channel"
     data = w.info_get_hashtable('irc_message_parse', {'message': signal_data})
     user, chan = UserStr(data['host']), data['channel']
+    userlist.join_cb(user, chan)
+    # Tell all da modules
     if tmb_mod.autovoice.enabled():
         tmb_mod.autovoice.join_cb(user, chan)
     if tmb_mod.antiflood.enabled():
@@ -142,6 +146,16 @@ def join_cb(data, signal, signal_data):
         tmb_mod.badwords.join_cb(user, chan)
     if tmb_mod.hello.enabled():
         tmb_mod.hello.join_cb(user, chan)
+    return w.WEECHAT_RC_OK
+
+
+def part_cb(data, signal, signal_data):
+    ''' Callback for when we see a PART '''
+    # signal is for example: "freenode,irc_in2_part"
+    # signal_data is IRC message, for example: ":nick!user@host PART :#channel"
+    data = w.info_get_hashtable('irc_message_parse', {'message': signal_data})
+    user, chan = UserStr(data['host']), data['channel']
+    userlist.part_cb(user, chan)
     return w.WEECHAT_RC_OK
 
 
@@ -177,6 +191,17 @@ def handle_command(user, where, message):
         args = [] if len(words) == 3 else words[3:]
         log('Executing "/{}" on behalf of {}', message, user.nick)
         mode(chan_or_nick, flags, *args)
+        return w.WEECHAT_RC_OK
+    elif words[0].lower() == 'info':
+        if len(words) != 2:
+            log(
+                'Invalid info command (just give nick as argument): {}',
+                message)
+            return w.WEECHAT_RC_OK
+        user = userlist.nick_to_user(words[1])
+        chans = userlist.user_in_chans(user)
+        s = '{} is in: {}'.format(user, ', '.join(chans))
+        notice(dest, s)
         return w.WEECHAT_RC_OK
     return w.WEECHAT_RC_OK
 
@@ -346,10 +371,12 @@ if __name__ == '__main__':
     # (re)init systems
     cmd_q.initialize(int(CONF['msg_burst']), float(CONF['msg_rate'])/1000)
     tmb_mod.hello.initialize()
+    userlist.initialize()
 
     w.hook_signal('irc_server_connected', 'connected_cb', '')
     w.hook_signal('irc_server_disconnected', 'connected_cb', '')
     w.hook_signal('*,irc_raw_in2_JOIN', 'join_cb', '')
+    w.hook_signal('*,irc_raw_in2_PART', 'part_cb', '')
     w.hook_signal('*,irc_raw_in2_PRIVMSG', 'privmsg_cb', '')
     w.hook_signal('*,irc_raw_in2_NOTICE', 'notice_cb', '')
     w.hook_config('plugins.var.python.' + SCRIPT_NAME + '.*', 'config_cb', '')
