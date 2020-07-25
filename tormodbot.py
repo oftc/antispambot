@@ -201,6 +201,9 @@ def handle_command(user, where, message):
                 message)
             return w.WEECHAT_RC_OK
         user = userlist.nick_to_user(words[1])
+        if not user:
+            log('No known user with nick {}', words[1])
+            return w.WEECHAT_RC_OK
         chans = userlist.user_in_chans(user)
         s = '{} is in: {}'.format(user, ', '.join(chans))
         notice(dest, s)
