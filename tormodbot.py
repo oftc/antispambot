@@ -10,6 +10,7 @@ import tmb_mod.badwords
 import tmb_mod.hello
 # other modules/packages
 import tmb_util.cmdqueue as cmd_q
+from tmb_util import chanserv
 from tmb_util import userlist
 from tmb_util.msg import notice, msg, join, mode, reconnect
 from tmb_util.lcsv import lcsv
@@ -83,6 +84,7 @@ def nickserv_user():
 
 def chanserv_user():
     ''' Returns UserStr of the configured chanserv '''
+    # return UserStr('pastly!~pastly@pastly.netop.oftc.net')
     return UserStr(CONF['chanserv_userstr'])
 
 
@@ -105,6 +107,8 @@ def timer_cb(data, remaining_calls):
         return cmd_q.timer_cb()
     elif data == 'userlist':
         return userlist.timer_cb()
+    elif data =='chanserv':
+        return chanserv.timer_cb()
     log(
         'timer_cb called with empty or unrecognized data arg "{}", so don\'t '
         'know who to tell about this.', data)
@@ -208,6 +212,8 @@ def handle_command(user, where, message):
         s = '{} is in: {}'.format(user, ', '.join(chans))
         notice(dest, s)
         return w.WEECHAT_RC_OK
+    elif words[0].lower() in ['quiet', 'akick']:
+        return chanserv.handle_command(user, where, message)
     return w.WEECHAT_RC_OK
 
 
@@ -376,6 +382,7 @@ if __name__ == '__main__':
     # (re)init systems
     cmd_q.initialize(int(CONF['msg_burst']), float(CONF['msg_rate'])/1000)
     tmb_mod.hello.initialize()
+    chanserv.initialize()
     userlist.initialize()
 
     w.hook_signal('irc_server_connected', 'connected_cb', '')

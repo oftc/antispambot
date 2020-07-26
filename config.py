@@ -119,7 +119,6 @@ HELLO_MANUAL_ENABLED = 'on'
 #: autoreponse in a a specific channel again
 HELLO_INTERVAL = '60'
 
-
 conf = {
     'serv': SERV,
     'log_chan': LOG_CHAN,
