@@ -27,15 +27,15 @@ w = weechat
 
 def notice(who, s, *a, **kw):
     ''' Send a notice to *who* (chan or nick). The notice message is
-    s.format(*a, **kw) '''
+    ``s.format(*a, **kw)`` '''
     s = s.format(*a, **kw)
     s = '/notice {} {}'.format(who, s)
     return _send(s)
 
 
 def msg(who, s, *a, **kw):
-    ''' Send a PRIVMSG to *who* (chan or nick). The message is s.format(*a,
-    **kw) '''
+    ''' Send a PRIVMSG to *who* (chan or nick). The message is ``s.format(*a,
+    **kw)`` '''
     s = s.format(*a, **kw)
     s = '/msg {} {}'.format(who, s)
     return _send(s)
