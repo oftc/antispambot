@@ -1,6 +1,6 @@
 import weechat
 # stdlib imports
-import time
+# import time
 # stuff that comes with tormodbot itself
 import tormodbot as tmb
 # other modules/packages
@@ -108,7 +108,7 @@ def _reload_from_nicklists():
     global D
     D = {}
     serv = tmb.serv()
-    time_start = time.time()
+    # time_start = time.time()
     chans = _monitored_chans()
     logged_warning = False
     for chan in chans:
@@ -131,10 +131,10 @@ def _reload_from_nicklists():
             s = '{}!{}'.format(nick, user_host)
             D[chan].add(UserStr(s))
         w.infolist_free(ilist)
-    time_end = time.time()
-    tmb.log(
-        'Cached {} n!u@h strings in {} chans in {:0.3f} seconds',
-        sum([len(_) for _ in D.values()]), len(chans), time_end - time_start)
+    # time_end = time.time()
+    # tmb.log(
+    #     'Cached {} n!u@h strings in {} chans in {:0.3f} seconds',
+    #     sum([len(_) for _ in D.values()]), len(chans), time_end - time_start)
 
 
 def _schedule_next(after):
@@ -150,9 +150,9 @@ def _schedule_next(after):
     # max acceptable interval
     REFRESH_TIMER_INTERVAL = min(
         2 * after, REFRESH_TIMER_INTERVAL_MAX)
-    tmb.log(
-        'Scheduling next total refresh of all known n!u@h in {} seconds',
-        after)
+    # tmb.log(
+    #     'Scheduling next total refresh of all known n!u@h in {} seconds',
+    #     after)
     REFRESH_TIMER_HOOK = w.hook_timer(
         int(after * 1000),  # interval, num ms
         0,  # align_second, which we don't care about
