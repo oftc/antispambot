@@ -107,7 +107,7 @@ def timer_cb(data, remaining_calls):
         return cmd_q.timer_cb()
     elif data == 'userlist':
         return userlist.timer_cb()
-    elif data =='chanserv':
+    elif data == 'chanserv':
         return chanserv.timer_cb()
     log(
         'timer_cb called with empty or unrecognized data arg "{}", so don\'t '
