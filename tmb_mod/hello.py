@@ -170,7 +170,7 @@ def privmsg_cb(user, receiver, message):
     # If we sent something to this channel too recently, don't let ourselves
     # spam
     if _too_soon(receiver):
-        tmb.log('It\'s too soon to autorespond in {} again', receiver)
+        # tmb.log('It\'s too soon to autorespond in {} again', receiver)
         return
     # Okay we should do something about this message. Act differently based on
     # what type of message it looks like
