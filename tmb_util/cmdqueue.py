@@ -3,6 +3,7 @@ import weechat
 from collections import deque
 import time
 # stuff that comes with tormodbot itself
+import tormodbot as tmb
 # other modules/packages
 from tmb_util.tokenbucket import token_bucket
 
@@ -42,6 +43,7 @@ def initialize(tb_size, tb_rate):
     if TIMER_HOOK:
         w.unhook(TIMER_HOOK)
         TIMER_HOOK = None
+    _set_options()
 
 
 def send(s):
@@ -131,3 +133,37 @@ def _send_as_much_as_possible():
 def _send(s):
     ''' Called internally when we're actually ready to send a command '''
     return w.command('', s)
+
+
+def _set_options():
+    ''' Set options that optimize our ability to send messages to the ircd.
+
+    Since we're doing our own throttling, we don't need weechat to do it for
+    us. We do it ourselves because weechat can only do it in 1 second
+    intervals, (1s between each message, or 2s between eac, or 3s, or ...) and
+    can't handle bursts (can't allow a burst of 5 messages all at once before
+    then enforcing an interval).
+
+    Thus we disable weechat's anti-flood options for this server. '''
+    antiflood_high_key = \
+        'irc.server.{}.anti_flood_prio_high'.format(tmb.serv())
+    antiflood_high_opt = w.config_get(antiflood_high_key)
+    antiflood_high_val = '0'  # disabled
+    antiflood_high_ret = w.config_option_set(
+        antiflood_high_opt, antiflood_high_val, 0)
+    antiflood_low_key = \
+        'irc.server.{}.anti_flood_prio_low'.format(tmb.serv())
+    antiflood_low_opt = w.config_get(antiflood_low_key)
+    antiflood_low_val = '0'  # disabled
+    antiflood_low_ret = w.config_option_set(
+        antiflood_low_opt, antiflood_low_val, 0)
+    if antiflood_high_ret == w.WEECHAT_CONFIG_OPTION_SET_ERROR:
+        tmb.log(
+            'WARNING: cmdqueue.py was unable to set '
+            '{} to {}, disabling it. Messages will be sent slower than '
+            'intended.', antiflood_high_key, antiflood_high_val)
+    if antiflood_low_ret == w.WEECHAT_CONFIG_OPTION_SET_ERROR:
+        tmb.log(
+            'WARNING: cmdqueue.py was unable to set '
+            '{} to {}, disabling it. Messages will be sent slower than '
+            'intended.', antiflood_low_key, antiflood_low_val)
