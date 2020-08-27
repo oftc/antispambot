@@ -122,9 +122,10 @@ def _reload_from_nicklists():
                 if not logged_warning:
                     tmb.log(
                         'WARNING: No user@host found for {} in {}. This is '
-                        'only expected to happen if weechat has not been '
-                        'configured correctly, which we should have already '
-                        'done for you. Are you ignoring warnings?',
+                        'only expected to happen in two cases. 1. if weechat '
+                        'has not been configured correctly, which we should '
+                        'have already done for you. 2. Just once or twice on '
+                        'initial startup. Are you ignoring warnings?',
                         nick, chan)
                     logged_warning = True
                 continue
