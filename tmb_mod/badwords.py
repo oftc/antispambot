@@ -72,7 +72,8 @@ def privmsg_cb(user, receiver, message):
         # Make every bad word lower case for case-insensitive matching
         bad_word = bad_word.lower()
         if bad_word in message:
-            tmb.log('{} said bad word "{}"', user.nick, bad_word)
+            tmb.log(
+                '{} said bad word "{}" in {}', user.nick, bad_word, receiver)
             for a in _actions():
                 {
                     'quiet_nick': _action_quiet_nick,
