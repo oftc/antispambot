@@ -10,6 +10,7 @@ import tmb_mod.badwords
 import tmb_mod.hello
 # other modules/packages
 import tmb_util.cmdqueue as cmd_q
+import help as tmb_help
 from tmb_util import chanserv
 from tmb_util import userlist
 from tmb_util.msg import notice, msg, join, mode, reconnect
@@ -214,6 +215,8 @@ def handle_command(user, where, message):
         return w.WEECHAT_RC_OK
     elif words[0].lower() in ['quiet', 'akick']:
         return chanserv.handle_command(user, where, message)
+    elif words[0].lower() == 'help':
+        return tmb_help.handle_command(user, where, message)
     return w.WEECHAT_RC_OK
 
 
