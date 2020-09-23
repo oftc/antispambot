@@ -8,6 +8,7 @@ import weechat
 # stuff that comes with tormodbot itself
 import tormodbot as tmb
 # other modules/packages
+from tmb_util.chanserv import TEMP_BAN_DAYS
 from tmb_util.msg import notice
 
 
@@ -44,8 +45,42 @@ def _help():
 
 def _help_akickquiet(s, which):
     ''' Help string for akick/ban/mute/quiet '''
-    return '''{which} a user from a channel. TODO
-'''.format(which=which)
+    return '''{which} a user from a channel.
+By default, an {which} is temporary for {temp_d} days.
+Usage:
+.   {which} [-p|--permanent] [-d|--duration DAYS] <chans_csv> <nick> <patterns_csv> <reason ...>
+-p,--permanent: Make the ban permanent. This overrides -d if it is also provided.
+-d,--duration DAYS: Make the ban temporary for the provided number of DAYS.
+chans_csv: CSV list of channels from which to {which} the user.
+nick: The nick of the user to {which}.
+patterns_csv: CSV list of hostmask patterns to {which}.
+reason: Required. The reason for the {which} to record with chanserv.
+.
+Consider the user pastly!matt@example.com.
+To permanently ban his nick and host from #foo and #bar:
+.    akick -p #foo,#bar pastly nick,host asks too many stupid questions
+This results in {me} issuing four chanserv commands:
+.    {which} add #foo pastly!*@* asks too many stupid questions
+.    {which} add #bar pastly!*@* asks too many stupid questions
+.    {which} add #foo *!*@example.com asks too many stupid questions
+.    {which} add #bar *!*@example.com asks too many stupid questions
+.
+Instead of a CSV of channels, you can simply provide "all", resulting in a {which} in every moderated channel.
+.
+The hostmask patterns are:
+.    nick nick* *nick *nick*
+.    user user* *user *user*
+.    host host* *host *host*
+They add asterisks ('*') to the corresponding spots in the nick!user@host hostmask. For example:
+.    {which} #foo pastly nick*,user*,*host* thinks he knows more than he does
+This results in {me} issuing three chanserv commands:
+.    {which} add #foo pastly*!*@*
+.    {which} add #foo *!matt*@*
+.    {which} add #foo *!*@*example.com*
+'''.format(  # noqa: E501
+    which=which,
+    me=tmb.my_nick(),
+    temp_d=TEMP_BAN_DAYS)
 
 
 def _help_info(cmd_msg):
