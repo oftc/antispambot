@@ -97,9 +97,33 @@ def _pattern_to_glob_string(pat):  # noqa: C901
     return None
 
 
+def _parser():
+    p = ArgumentParser()
+    p.add_argument('cmd', choices=['quiet', 'akick'])
+    # comma-seperated list of '#chan1,#chan2' or 'all'
+    p.add_argument('chans', type=str)
+    p.add_argument('nick', type=str)
+    p.add_argument('pats', type=str)
+    p.add_argument('reason', type=str, nargs='+')
+    # If given, ignore --duration and make the ban permanent
+    p.add_argument('-p', '--permanent', action='store_true')
+    # Duration, in days, of a temporary ban
+    p.add_argument('-d', '--duration', type=int, default=TEMP_BAN_DAYS)
+    return p
+
+
+def _try_parse(p, s):
+    try:
+        return p.parse_args(s.split())
+    except:  # noqa: E722, for whatever reason can't even catch Exception in weechat
+        tmb.log('Unable to parse chanserv command "{}"', s)
+        return None
+
+
 def _handle_command(master_nick, args):
     ''' *master* told use to execute a valid command, described in *args*. Do
-    it '''
+    it and return the number of new bans we create '''
+    num_new_bans = 0
     # Get channels, and make sure we ignore any that aren't moderated chans
     chans = args.chans
     ignored_chans = {c for c in chans if c not in tmb.mod_chans()}
@@ -151,7 +175,54 @@ def _handle_command(master_nick, args):
                 # save it in the db
                 db_conn.execute(INSERT_QUERY, (
                     glob, chan, 1 if args.cmd == 'quiet' else 0, expire))
+                num_new_bans += 1
     db_conn.close()
+    return num_new_bans
+
+
+def internal_handle_command(
+        nick, chans, pats, reason, is_quiet=False, is_permanent=False,
+        duration=TEMP_BAN_DAYS):
+    ''' Internal version of :meth:`handle_command` for our own code to issue
+    akicks/quiets.
+
+    :param nick: Nick to akick/quiet. We'll look up the n!u@h string.
+    :param chans: List of channels in which to akick/quiet. If 'all' appears in
+        the list, it will be replaced with all moderated channels.
+    :param pats: List of hostmask patterns such as 'nick', 'user*', '*host',
+        and '*host*'.
+    :param reason: String reason for the akick/quiet. A reason must be
+        provided.
+    :param is_quiet: ``True`` if this is a quiet/mute. ``False`` means this is
+        a ban/akick.
+    :param is_permanent: Whether or not the akick/quiet is permanent. If True,
+        overrides whatever ``duration`` is set to.
+    :param duration: The duration of the ban, in days. Gets overridden by
+        ``is_permanent`` if it is True.
+
+    :returns: ``True`` if we were able to do *any* akick/quiet, otherwise
+        ``False``.
+    '''
+    reason = reason.strip()
+    if not len(chans) or not len(pats) or not len(reason) or not len(nick):
+        return False
+    s = '{act} {chans_csv} {n} {pats_csv} {r} {perm} {dur}'.format(
+        act='quiet' if is_quiet else 'akick',
+        chans_csv=lcsv(chans),
+        n=nick,
+        pats_csv=lcsv(pats),
+        r=reason,
+        perm='--permanent' if is_permanent else '',
+        dur='--duration %d' % (duration,) if not is_permanent else '')
+    args = _try_parse(_parser(), s)
+    if not args:
+        # error should already be logged
+        return False
+    args.pats = lcsv(args.pats)
+    args.chans = lcsv(args.chans)
+    args.reason = ' '.join(args.reason) + ' (tmb)'
+    num_new = _handle_command(tmb.my_nick(), args)
+    return num_new > 0
 
 
 def handle_command(user, where, message):
@@ -161,21 +232,9 @@ def handle_command(user, where, message):
     nick if PM). It has already been verified that the user is a master and
     that ``where`` is a proper place.
     '''
-    p = ArgumentParser()
-    p.add_argument('cmd', choices=['quiet', 'akick'])
-    # comma-seperated list of '#chan1,#chan2' or 'all'
-    p.add_argument('chans', type=str)
-    p.add_argument('nick', type=str)
-    p.add_argument('pats', type=str)
-    p.add_argument('reason', type=str, nargs='+')
-    # If given, ignore --duration and make the ban permanent
-    p.add_argument('-p', '--permanent', action='store_true')
-    # Duration, in days, of a temporary ban
-    p.add_argument('-d', '--duration', type=int, default=TEMP_BAN_DAYS)
-    try:
-        args = p.parse_args(message.split())
-    except:  # noqa: E722, for whatever reason can't even catch Exception in weechat
-        tmb.log('Unable to parse chanserv command "{}"', message)
+    args = _try_parse(_parser(), message)
+    if not args:
+        # error message already logged
         return w.WEECHAT_RC_OK
     args.pats = lcsv(args.pats)
     if args.chans == 'all':

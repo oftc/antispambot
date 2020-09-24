@@ -17,9 +17,9 @@ import time
 # stuff that comes with tormodbot itself
 import tormodbot as tmb
 # other modules/packages
+from tmb_util import chanserv
 from tmb_util.tokenbucket import token_bucket
 from tmb_util.lcsv import lcsv
-from tmb_util.msg import msg
 # from tmb_util.userstr import UserStr
 
 
@@ -167,10 +167,8 @@ def _actions():
 
 def _action_quiet_host(user, chan):
     ''' Tell chanserv to quiet the UserStr user's host on channel chan '''
-    reason = 'Flooding (tmb auto)'
-    s = 'quiet {chan} add *!*@{host} {r}'.format(
-        chan=chan, host=user.host, r=reason)
-    msg(tmb.chanserv_user().nick, s)
+    chanserv.internal_handle_command(
+        user.nick, [chan], ['host'], 'flooding', is_quiet=True)
 
 
 def _action_done_recently(action, user, chan):

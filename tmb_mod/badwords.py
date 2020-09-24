@@ -14,8 +14,8 @@ import enum
 # stuff that comes with tormodbot itself
 import tormodbot as tmb
 # other modules/packages
+from tmb_util import chanserv
 from tmb_util.lcsv import lcsv
-from tmb_util.msg import msg
 
 #: The name of this module (wow such good comment)
 MOD_NAME = 'badwords'
@@ -83,11 +83,8 @@ def privmsg_cb(user, receiver, message):
 
 def _action_quiet_nick(user, chan):
     ''' Tell chanserv to quiet the UserStr user's host on channel chan '''
-    reason = 'badword (tmb auto)'
-    s = 'quiet {chan} add {nick}!*@* {r}'.format(
-        chan=chan, nick=user.nick, r=reason)
-    # msg('pastly', s)
-    msg(tmb.chanserv_user().nick, s)
+    chanserv.internal_handle_command(
+        user.nick, [chan], ['nick'], 'badword', is_quiet=True)
 
 
 def _actions():
