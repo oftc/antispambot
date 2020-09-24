@@ -49,19 +49,19 @@ def _help_akickquiet(s, which):
 By default, an {which} is temporary for {temp_d} days.
 Usage:
 .   {which} [-p|--permanent] [-d|--duration DAYS] <chans_csv> <nick> <patterns_csv> <reason ...>
--p,--permanent: Make the ban permanent. This overrides -d if it is also provided.
--d,--duration DAYS: Make the ban temporary for the provided number of DAYS.
+-p,--permanent: Make the {which} permanent. This overrides -d if it is also provided.
+-d,--duration DAYS: Make the {which} temporary for the provided number of DAYS.
 chans_csv: CSV list of channels from which to {which} the user.
 nick: The nick of the user to {which}.
 patterns_csv: CSV list of hostmask patterns to {which}.
 reason: Required. The reason for the {which} to record with chanserv.
 .
-Consider the user pastly!matt@example.com.
-To permanently ban his nick and host from #foo and #bar:
-.    akick -p #foo,#bar pastly nick,host asks too many stupid questions
+Consider the user crazycake!jasper@example.com.
+To permanently {which} his nick and host from #foo and #bar:
+.    {which} -p #foo,#bar crazycake nick,host asks too many stupid questions
 This results in {me} issuing four chanserv commands:
-.    {which} add #foo pastly!*@* asks too many stupid questions
-.    {which} add #bar pastly!*@* asks too many stupid questions
+.    {which} add #foo crazycake!*@* asks too many stupid questions
+.    {which} add #bar crazycake!*@* asks too many stupid questions
 .    {which} add #foo *!*@example.com asks too many stupid questions
 .    {which} add #bar *!*@example.com asks too many stupid questions
 .
@@ -72,21 +72,21 @@ The hostmask patterns are:
 .    user user* *user *user*
 .    host host* *host *host*
 They add asterisks ('*') to the corresponding spots in the nick!user@host hostmask. For example:
-.    {which} #foo pastly nick*,user*,*host* thinks he knows more than he does
+.    {which} #foo crazycake nick*,user*,*host* thinks he knows more than he does
 This results in {me} issuing three chanserv commands:
-.    {which} add #foo pastly*!*@*
-.    {which} add #foo *!matt*@*
+.    {which} add #foo crazycake*!*@*
+.    {which} add #foo *!jasper*@*
 .    {which} add #foo *!*@*example.com*
 '''.format(  # noqa: E501
-    which=which,
-    me=tmb.my_nick(),
-    temp_d=TEMP_BAN_DAYS)
+        which=which,
+        me=tmb.my_nick(),
+        temp_d=TEMP_BAN_DAYS)
 
 
 def _help_info(cmd_msg):
     ''' Help string for 'help info' command '''
     return '''Get info on a nick.
-Ex: "info pastly" returns information we have on pastly
+Ex: "info crazycake" returns information we have on crazycake
 Additional info may be provided in future updates, thus this help is vague.
 '''
 
@@ -113,7 +113,7 @@ def _help_reconnect(cmd_msg):
 def handle_command(user, where, message):
     ''' Main tormodbot code calls into this when we're enabled and the given
     :class:`tmb_util.userstr.UserStr` has sent us a command stored in
-    ``message`` (``str``), via ``where`` (``str``, either a "#channel" or our
+    ``message`` (``str``) via ``where`` (``str``, either a "#channel" or our
     nick if PM). It has already been verified that the user is a master and
     that ``where`` is a proper place.
     '''
