@@ -27,6 +27,10 @@ SCRIPT_LICENSE = 'MIT'
 SCRIPT_DESC = 'Help Tor Project moderate their many channels'
 
 CONNECTED = False
+#: Weechat timer hook on our event for delayed on-connect actions
+CONNECTED_TIMER_HOOK = None
+#: How long to wait, in seconds, before doing delayed on-connect actions
+CONNECTED_DELAY_SECS = 5
 
 
 def log(s, *a, **kw):
@@ -110,9 +114,24 @@ def timer_cb(data, remaining_calls):
         return userlist.timer_cb()
     elif data == 'chanserv':
         return chanserv.timer_cb()
+    elif data == 'connected':
+        return delayed_connect_cb()
     log(
         'timer_cb called with empty or unrecognized data arg "{}", so don\'t '
         'know who to tell about this.', data)
+    return w.WEECHAT_RC_OK
+
+
+def delayed_connect_cb():
+    # make sure we're in all the chans for modding, and for logging
+    for c in mod_chans():
+        join(c)
+    if log_chan():
+        join(log_chan())
+    # make sure we're op in all the modding chans
+    chanop_chans(mod_chans(), True)
+    # make sure we know about all users in all chans
+    userlist.connect_cb()
     return w.WEECHAT_RC_OK
 
 
@@ -122,18 +141,28 @@ def connected_cb(data, signal, signal_data):
     # signal: "irc_server_connected" or "irc_server_disconnected"
     # signal_data: "oftc"
     global CONNECTED
+    global CONNECTED_TIMER_HOOK
     CONNECTED = signal == "irc_server_connected"
     log('We are {}connected to {}', '' if CONNECTED else 'not ', signal_data)
+    # If we have just connected, wait a little bit before doing anything to
+    # hopefully win the identify-to-nickserv race. Yes this race still exists
+    # on OFTC with CertFP.
     if CONNECTED:
-        # make sure we're in all the chans for modding, and for logging
-        for c in mod_chans():
-            join(c)
-        if log_chan():
-            join(log_chan())
-        # make sure we're op in all the modding chans
-        chanop_chans(mod_chans(), True)
-        # make sure we know about all users in all chans
-        userlist.connect_cb()
+        if CONNECTED_TIMER_HOOK:
+            w.unhook(CONNECTED_TIMER_HOOK)
+            CONNECTED_TIMER_HOOK = None
+        log(
+            'Sleeping {} seconds before doing delayed on-connect actions',
+            CONNECTED_DELAY_SECS)
+        CONNECTED_TIMER_HOOK = w.hook_timer(
+            int(CONNECTED_DELAY_SECS * 1000),  # interval, num ms
+            0,  # align_second, don't care
+            1,  # call once, we'll schedule ourselves again
+            # Function to call. Since this is tormodbot.py, it is actually the
+            # timer_cb in this file. We still need to specify callback_data,
+            # however.
+            'timer_cb',
+            'connected')  # callback_data
     return w.WEECHAT_RC_OK
 
 
