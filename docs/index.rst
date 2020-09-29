@@ -22,6 +22,7 @@ Docs
    :maxdepth: 2
    :caption: Contents:
 
+   INSTALLING
    USING
    HACKING
    LIMITATIONS
