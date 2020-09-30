@@ -1,6 +1,10 @@
 Installation and Setup
 ======================
 
+.. warning::
+
+   This document is unfinished :(
+
 .. note::
 
    The last time this note was updated (which is an approximation of the last
@@ -98,5 +102,3 @@ virtualenv for WeeChat.
    python: stdout/stderr (?):     import enum
    python: stdout/stderr (?): ImportError: No module named enum
    python: unable to parse file "/home/matt/weechat-temp/python/tormodbot.py"
-
-l
