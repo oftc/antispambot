@@ -130,6 +130,9 @@ FAQ_RATE = '5000'
 #: How long, in seconds, we must wait between given *the same* FAQ response in
 #: the same channel.
 FAQ_RECENT = '120'
+#: The response to give when asked for a FAQ keyword to which we don't know the
+#: response. This is used in all channels.
+FAQ_UNKNOWN = 'I don\'t know about that. If I should, open a ticket at https://gitlab.torproject.org/pastly/weechat-tormodbot'  # noqa: E501
 
 conf = {
     'serv': SERV,
@@ -164,4 +167,5 @@ conf = {
     'faq_burst': FAQ_BURST,
     'faq_rate': FAQ_RATE,
     'faq_recent': FAQ_RECENT,
+    'faq_unknown': FAQ_UNKNOWN,
 }

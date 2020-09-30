@@ -150,7 +150,7 @@ def privmsg_cb(user, receiver, message):
     resp = _find_response(receiver, keyword)
     if not resp:
         tmb.log('{} asked for FAQ {}, but not known', user.nick, keyword)
-        return
+        resp = _unknown_resp()
     # Make sure we haven't pasted this response too recently
     if _faq_done_recently(receiver, keyword):
         tmb.log('{} in {} done recently, so skipping', keyword, receiver)
@@ -225,6 +225,11 @@ def _recent():
     ''' The amount of time, in seconds, that must pass before we will say the
     same FAQ response in the same channel again. '''
     return int(w.config_get_plugin(_conf_key('recent')))
+
+
+def _unknown_resp():
+    ''' The response to give when there is no configured response '''
+    return w.config_get_plugin(_conf_key('unknown'))
 
 
 def _faq_done_recently(chan, faq):
