@@ -1,0 +1,5 @@
+Do not torrent over tor. There are two reasons torrenting over tor is bad:
+1. A long while ago, it was discovered that some torrent clients when configured with a socks proxy would still learn their IP address and advertise it over their configured proxy.
+It is unknown whether those clients have changed their behavior.
+2. Torrenting over tor is overwhelmingly desired by people wanting to pirate stuff without getting in trouble. It hogs network resources, making Tor slower for everyone including
+those that need it for free access to uncensored internet. It also gets exits in trouble, thus slower and smaller network.
