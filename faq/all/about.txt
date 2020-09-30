@@ -1,0 +1,3 @@
+TorModBot is a IRC bot written to help Tor Project moderate their many channels.
+It is written and maintained by pastly (https://matt.traudt.xyz).
+For code and more information, see https://tormodbot.pastly.xyz and https://gitlab.torproject.org/pastly/weechat-tormodbot

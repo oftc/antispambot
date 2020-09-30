@@ -119,6 +119,18 @@ HELLO_MANUAL_ENABLED = 'on'
 #: autoreponse in a a specific channel again
 HELLO_INTERVAL = '60'
 
+# ### faq.py configuration options ###
+#: Whether to enable the :mod:`tmb_mod.faq` module
+FAQ_ENABLED = 'on'
+#: How many FAQ responses we can burst to a specific channel without waiting
+FAQ_BURST = '3'
+#: How long, in milliseconds, we must wait between FAQ responses in a specific
+#: channel
+FAQ_RATE = '5000'
+#: How long, in seconds, we must wait between given *the same* FAQ response in
+#: the same channel.
+FAQ_RECENT = '120'
+
 conf = {
     'serv': SERV,
     'log_chan': LOG_CHAN,
@@ -148,4 +160,8 @@ conf = {
     'hello_new_msgs': HELLO_NEW_MSGS,
     'hello_manual_enabled': HELLO_MANUAL_ENABLED,
     'hello_interval': HELLO_INTERVAL,
+    'faq_enabled': FAQ_ENABLED,
+    'faq_burst': FAQ_BURST,
+    'faq_rate': FAQ_RATE,
+    'faq_recent': FAQ_RECENT,
 }
