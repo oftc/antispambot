@@ -149,7 +149,9 @@ def privmsg_cb(user, receiver, message):
     # Find the response, if any. Will be None if we have no response.
     resp = _find_response(receiver, keyword)
     if not resp:
-        tmb.log('{} asked for FAQ {}, but not known', user.nick, keyword)
+        tmb.log(
+            '{} asked for FAQ {} in {}, but not known',
+            user.nick, keyword, receiver)
         resp = _unknown_resp()
     # Make sure we haven't pasted this response too recently
     if _faq_done_recently(receiver, keyword):
