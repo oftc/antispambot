@@ -1,0 +1,2 @@
+# vim: set tw=400:
+YouTube is broken in Tor Browser 10. Please see this ticket for why and a hack https://gitlab.torproject.org/tpo/applications/tor-browser/-/issues/40140. Some people use invidious as a proxy to YouTube https://www.invidio.us/.
