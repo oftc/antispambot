@@ -289,20 +289,22 @@ def privmsg_cb(data, signal, signal_data):
     if user.nick in ignores():
         # log('Ignore PRIVMSG from {} in {}', user.nick, dest)
         return w.WEECHAT_RC_OK
+    # If it's a PM, try handing it off to modules that want PRIVMSGes that are
+    # PMs. Do not return from this check, as PMs could be be from a master
+    # telling us to do something administratively
+    if dest == my_nick():
+        if tmb_mod.faq.enabled():
+            tmb_mod.faq.privmsg_cb(user, dest, message)
     # If it is a PM to us or a message in our cmd channel, AND if the sender is
     # one of our masters, handle it as a command
     if (dest == my_nick() or dest == cmd_chan()) and user.nick in masters():
         return handle_command(user, dest, message)
     ###########
-    # It wasn't a command at this point
+    # It wasn't a master-only command at this point, nor is it a PM that we
+    # care about
     ###########
-    # If it came in our cmd channel, then ignore
-    if dest == cmd_chan():
-        return w.WEECHAT_RC_OK
-    # If it was a PM, then ignore
-    if dest == my_nick():
-        return w.WEECHAT_RC_OK
-    # If it came in on something other than a moderated channel, ignore it
+    # If it came in on something other than a moderated channel (e.g. cmd_chan
+    # or PM), ignore it
     if dest not in mod_chans():
         return w.WEECHAT_RC_OK
     # Tell our modules about this message

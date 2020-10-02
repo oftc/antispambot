@@ -132,7 +132,9 @@ FAQ_RATE = '5000'
 FAQ_RECENT = '120'
 #: The response to give when asked for a FAQ keyword to which we don't know the
 #: response. This is used in all channels.
-FAQ_UNKNOWN = 'I don\'t know about that. If I should, open a ticket at https://gitlab.torproject.org/pastly/weechat-tormodbot'  # noqa: E501
+FAQ_UNKNOWN = 'I don\'t know about that. If I should, open a ticket at '\
+    'https://gitlab.torproject.org/pastly/weechat-tormodbot. Also try '\
+    'sending me a PM with !faq or !faq #chan'
 
 conf = {
     'serv': SERV,

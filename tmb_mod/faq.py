@@ -46,9 +46,11 @@ an end-of-line comment.
 '''
 import weechat
 # stdlib imports
+import glob
 import os
-from collections import deque
+import textwrap
 import time
+from collections import deque
 # stuff that comes with tormodbot itself
 import tormodbot as tmb
 # other modules/packages
@@ -123,23 +125,74 @@ def join_cb(user, chan):
     pass
 
 
-def privmsg_cb(user, receiver, message):
-    ''' Main tormodbot code calls into this when we're enabled and the given
-    :class:`tmb_util.userstr.UserStr` has sent ``message`` (``str``) to
-    ``recevier`` (``str``). The receiver can be a channel ("#foo") or a nick
-    ("foo").
+def _send_resp(dest, resp):
+    ''' Send the multi-line *resp* string to the nick or channel *dest* '''
+    if not resp or not dest:
+        return
+    for line in resp.split('\n'):
+        line = line.strip()
+        if not len(line) or line[0] == '#':
+            continue
+        notice(dest, line)
+
+
+def _privmsg_pm_cb(user, receiver, message):
+    ''' PRIVMSG from :class:`tmb_util.userstr.UserStr` to us via PM.
+
+    If we get just '!faq', then we provide help text on how to query the FAQ
+    responses.
+
+    If we get three words, e.g. '!faq #chan foo', then we return the same thing
+    we would return as if we receieved '!faq foo' in #chan.
+
+    If we get two words and they are '!faq all' or '!faq #chan', we return the
+    list of FAQ keywords we known globally or in #chan.
+
+    If we get two words and didn't do the above, e.g. '!faq keyword', then we
+    look for 'keyword' globally (in an 'all/' directory) and return the result.
     '''
-    global TOKEN_BUCKETS
-    global TB_FUNC
-    global RECENT_FAQS
-    # The first two are sanity checks: that the receiver is a non-empty string
-    # and that it looks like a channel name.
-    # The third check is that it is one of our moderated channels. We only care
-    # about those.
-    receiver = receiver.lower()
-    if not len(receiver) or \
-            receiver[0] != '#' or \
-            receiver not in tmb.mod_chans():
+    # Sanity check
+    if receiver != tmb.my_nick():
+        return
+    words = message.lower().split()
+    if words[0] != '!faq':
+        return
+    help_text = 'Not a valid question. Try or "!faq all" '\
+        'or "!faq #chan" or "!faq #chan keyword" or "!faq keyword"'
+    if len(words) == 1 or len(words) > 3:
+        notice(user.nick, help_text)
+        return
+    # if '!faq #chan' or '!faq all'
+    if len(words) == 2 and (words[1] == 'all' or words[1] in tmb.mod_chans()):
+        chan = words[1]
+        keywords = list(_list_keywords_in_chan(chan))
+        keywords.sort()
+        chan_str = 'globally' if chan == 'all' else 'in ' + chan
+        if not len(keywords):
+            s = 'We don\'t know any FAQ responses ' + chan_str
+        else:
+            s = 'We known about the following FAQs ' + chan_str + ': ' +\
+                ' '.join(keywords)
+        s = textwrap.fill(s, 400)
+        _send_resp(user.nick, s)
+        return
+    # if '!faq keyword'
+    if len(words) == 2:
+        key = words[1]
+        resp = _find_response('all', key) or _unknown_resp()
+        _send_resp(user.nick, resp)
+    # if '!faq #chan keyword' or '!faq all keyword'
+    if len(words) == 3 and words[1] == 'all' or words[1] in tmb.mod_chans():
+        chan = words[1]
+        key = words[2]
+        resp = _find_response(chan, key) or _unknown_resp()
+        _send_resp(user.nick, resp)
+        return
+
+
+def _privmsg_modchan_cb(user, receiver, message):
+    # Sanity check
+    if receiver not in tmb.mod_chans():
         return
     words = message.lower().split()
     # Determine if this is a message asking us to paste a FAQ response
@@ -170,12 +223,25 @@ def privmsg_cb(user, receiver, message):
             message, user.nick)
         return
     # Send the response
-    for line in resp.split('\n'):
-        line = line.strip()
-        if not len(line) or line[0] == '#':
-            continue
-        notice(receiver, line)
+    _send_resp(receiver, resp)
     RECENT_FAQS.append((time.time(), receiver, keyword))
+
+
+def privmsg_cb(user, receiver, message):
+    ''' Main tormodbot code calls into this when we're enabled and the given
+    :class:`tmb_util.userstr.UserStr` has sent ``message`` (``str``) to
+    ``recevier`` (``str``). The receiver can be a channel ("#foo") or a nick
+    ("foo").
+    '''
+    global TOKEN_BUCKETS
+    global TB_FUNC
+    global RECENT_FAQS
+    if not len(message) or not message.lower().split()[0] == '!faq':
+        return
+    receiver = receiver.lower()
+    if receiver == tmb.my_nick():
+        return _privmsg_pm_cb(user, receiver, message)
+    return _privmsg_modchan_cb(user, receiver, message)
 
 
 def _find_response(chan, keyword):
@@ -185,12 +251,7 @@ def _find_response(chan, keyword):
     multi-line string. '''
     # List of dirs in which we might find the keyword file, ordered from most
     # specific to least. This way, we stop as soon as we find a file.
-    possible_dirs = [
-        os.path.join(datadir(), chan),
-        os.path.join(datadir(), 'all'),
-        os.path.join(_bundled_faq_dir(), chan),
-        os.path.join(_bundled_faq_dir(), 'all'),
-    ]
+    possible_dirs = _search_dirs(chan)
     base = keyword + '.txt'
     for d in possible_dirs:
         fname = os.path.join(d, base)
@@ -246,3 +307,29 @@ def _faq_done_recently(chan, faq):
         if (chan_i, faq_i) == (chan, faq):
             return True
     return False
+
+
+def _search_dirs(chan):
+    ''' Return the ordered list of dirs in which we should look for FAQ
+    responses. *chan* is either a '#channel' or 'all' '''
+    # if chan is 'all', then the list will contain duplicate items, which
+    # should be fine for how this function is currently used. Just a little
+    # wasteful
+    return [
+        os.path.join(datadir(), chan),
+        os.path.join(datadir(), 'all'),
+        os.path.join(_bundled_faq_dir(), chan),
+        os.path.join(_bundled_faq_dir(), 'all'),
+    ]
+
+
+def _list_keywords_in_chan(chan):
+    ''' Look up and return a list of all keywords we know about in *chan*,
+    which is either a '#channel' or 'all' '''
+    return {
+        # Convert 'a/b/c.txt' to 'c'
+        os.path.basename(os.path.splitext(f)[0])
+        # For each file in each search directory
+        for d in _search_dirs(chan)
+        for f in glob.iglob(os.path.join(d, '*.txt'))
+    }
