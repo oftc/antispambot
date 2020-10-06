@@ -1,3 +1,5 @@
 # vim: set tw=400:
 Do not torrent over Tor. There are two reasons torrenting over Tor is bad: 1. In 2010, it was discovered that some torrent clients when configured with a socks proxy would still learn their IP address and advertise it over the proxy.  It is unknown what clients, if any, exhibit this behavior today.  2. Torrenting over Tor is overwhelmingly desired by people wanting to pirate stuff without getting
 in trouble. It hogs network resources, making Tor slower for everyone including those that need it for free access to uncensored Internet. It also gets exits in trouble, thus making Tor slower and smaller network.  See also: https://blog.torproject.org/bittorrent-over-tor-isnt-good-idea https://hal.inria.fr/file/index/docid/471556/filename/TorBT.pdf
+
+Downloading the small .torrent file over Tor or copying a magnet link in Tor Browser is fine, but arguably pointless: this isn't what gets people in trouble, and it uses negligible bandwidth. Putting that file or magnet link into BitTorrent software you've configured to proxy over Tor is the bad part that the preceding text is talking about.
