@@ -1,4 +1,4 @@
-Hello! Welcome to this Tor IRC channel. Please be patient as IRC can be slow, *especially* when it's not a weekday and not a work-day-time for the US and Europe.
+Hello! Welcome to this Tor IRC channel. Please be patient as IRC can be slow, *especially* when it's not a weekday and not work-day-time for the US and Europe.
 
 Tor has two projects for Outreachy: Anonymous Ticket Handling [mentor Alex (Ahf)] and Help Tor Project support our users [mentor Gus (ggus)]. Both have instructions on the Outreachy application page.
 
