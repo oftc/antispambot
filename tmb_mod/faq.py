@@ -181,7 +181,7 @@ def _privmsg_pm_cb(user, receiver, message):
         resp = _find_response('all', key) or _unknown_resp()
         _send_resp(user.nick, resp)
     # if '!faq #chan keyword' or '!faq all keyword'
-    if len(words) == 3 and words[1] == 'all' or words[1] in tmb.mod_chans():
+    if len(words) == 3 and (words[1] == 'all' or words[1] in tmb.mod_chans()):
         chan = words[1]
         key = words[2]
         resp = _find_response(chan, key) or _unknown_resp()
