@@ -1,3 +1,7 @@
-# vim: set tw=400:
-TorModBot is a IRC bot written to help Tor Project moderate their many channels.  It is written and maintained by pastly (https://matt.traudt.xyz).  For code and more information, see https://tormodbot.pastly.xyz and https://gitlab.torproject.org/pastly/weechat-tormodbot
-Tor Project has an amazing FAQ and collection of guides. Check them out https://support.torproject.org https://community.torproject.org.
+TorModBot is a IRC bot written to help Tor Project moderate their many
+channels.  It is written and maintained by pastly (https://matt.traudt.xyz).
+For code and more information, see https://tormodbot.pastly.xyz and
+https://gitlab.torproject.org/pastly/weechat-tormodbot
+
+Tor Project has an amazing FAQ and collection of guides. Check them out
+https://support.torproject.org https://community.torproject.org.

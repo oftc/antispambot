@@ -48,7 +48,6 @@ import weechat
 # stdlib imports
 import glob
 import os
-import textwrap
 import time
 from collections import deque
 # stuff that comes with tormodbot itself
@@ -56,6 +55,7 @@ import tormodbot as tmb
 # other modules/packages
 from tmb_util.msg import notice
 from tmb_util.tokenbucket import token_bucket
+from tmb_util.wordwrap import wrap_text
 
 
 # To make calling weechat stuff take fewer characters
@@ -129,7 +129,7 @@ def _send_resp(dest, resp):
     ''' Send the multi-line *resp* string to the nick or channel *dest* '''
     if not resp or not dest:
         return
-    for line in resp.split('\n'):
+    for line in wrap_text(resp, 400):
         line = line.strip()
         if not len(line) or line[0] == '#':
             continue
@@ -173,7 +173,6 @@ def _privmsg_pm_cb(user, receiver, message):
         else:
             s = 'We known about the following FAQs ' + chan_str + ': ' +\
                 ' '.join(keywords)
-        s = textwrap.fill(s, 400)
         _send_resp(user.nick, s)
         return
     # if '!faq keyword'

@@ -1,6 +1,14 @@
-# vim: set tw=400:
-torbrowser-launcher (tb-l) is maintained by Micah Lee (not Tor). tb-l downloads Tor Browser from https://torproject.org for you, checks its signature, and "installs" it to a hidden home directory for your user. The officially-supported way to install Tor Browser is to download it yourself from https://torproject.org, optionally checking the signature by following the instructions here
-https://support.torproject.org/tbb/how-to-verify-signature/. No matter how you obtain it, Tor Browser auto-updates itself.
+torbrowser-launcher (tb-l) is maintained by Micah Lee (not Tor). tb-l downloads
+Tor Browser from https://torproject.org for you, checks its signature, and
+"installs" it to a hidden home directory for your user. The
+officially-supported way to install Tor Browser is to download it yourself from
+https://torproject.org, optionally checking the signature by following the
+instructions here https://support.torproject.org/tbb/how-to-verify-signature/.
+No matter how you obtain it, Tor Browser auto-updates itself.
 
-A common problem with tb-l is SIGNATURE VERIFICATION FAILED. While you expect this error when the Tor Browser download is corrupted/malicious, it's much more likely in this case that tb-l's copy of the signing key is simply out of date again and there's nothing seriously wrong. This is a reoccurring problem with MANY issues on the tb-l issue tracker. See here for one such issue and the latest fix.
-https://github.com/micahflee/torbrowser-launcher/issues/481
+A common problem with tb-l is SIGNATURE VERIFICATION FAILED. While you expect
+this error when the Tor Browser download is corrupted/malicious, it's much more
+likely in this case that tb-l's copy of the signing key is simply out of date
+again and there's nothing seriously wrong. This is a reoccurring problem with
+MANY issues on the tb-l issue tracker. See here for one such issue and the
+latest fix.  https://github.com/micahflee/torbrowser-launcher/issues/481

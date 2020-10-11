@@ -1,7 +1,16 @@
-Hello! Welcome to this Tor IRC channel. Please be patient as IRC can be slow, *especially* when it's not a weekday and not work-day-time for the US and Europe.
+Hello! Welcome to this Tor IRC channel. Please be patient as IRC can be slow,
+*especially* when it's not a weekday and not work-day-time for the US and
+Europe.
 
-Tor has two projects for Outreachy: Anonymous Ticket Handling [mentor Alex (Ahf)] and Help Tor Project support our users [mentor Gus (ggus)]. Both have instructions on the Outreachy application page.
+Tor has two projects for Outreachy: Anonymous Ticket Handling [mentor Alex
+(Ahf)] and Help Tor Project support our users [mentor Gus (ggus)]. Both have
+instructions on the Outreachy application page.
 
-You may also want to: (1) subscribe to relevant Tor mailing lists at https://lists.torproject.org, (2) register an IRC account and get comfortable with a "real" IRC client if you aren't already using one https://support.torproject.org/get-in-touch/irc-help/, (3) create an account on https://gitlab.torproject.org, pinging ahf or gaba on IRC after doing so.
+You may also want to: (1) subscribe to relevant Tor mailing lists at
+https://lists.torproject.org, (2) register an IRC account and get comfortable
+with a "real" IRC client if you aren't already using one
+https://support.torproject.org/get-in-touch/irc-help/, (3) create an account on
+https://gitlab.torproject.org, pinging ahf or gaba on IRC after doing so.
 
-Again, welcome and thanks for your interest in helping Tor Project! Please feel free to stick around and ask questions.
+Again, welcome and thanks for your interest in helping Tor Project! Please feel
+free to stick around and ask questions.
