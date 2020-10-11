@@ -37,7 +37,3 @@ Class to store `nick!user@host` string in a richer class. Offers `.nick`,
 `.user`, and `.host` properties that convert the values to lower case before
 returning them. Convert a `UserStr` to a string to get the original
 `nick!user@host`.
-
-# Testing
-
-    pytest --doctest-modules
