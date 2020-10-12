@@ -1,36 +1,80 @@
-''' FAQ module
+'''
+FAQ module
+==========
 
 If enabled, we can read a library of FAQ responses from plain-text files on
 disk, both bundled with tormodbot and ones the operator wrote themself.
 
-FAQ responses can be specific to a moderated channel, or they can be general
-for all channels. Assuming the default WeeChat data directory, when searching
-for the response to FAQ keyword ``bar`` in channel ``#foo``, we search in the
-following places **in order** and select the first FAQ response found:
+Usage
+-----
+
+In public (in a moderated channel)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A FAQ query can take one of two forms:
 
 .. code-block:: text
 
-    ~/.weechat/tmb_data/#foo/bar.txt
-    ~/.weechat/tmb_data/all/bar.txt
-    ~/.weechat/python/faq/#foo/bar.txt
-    ~/.weechat/python/faq/all/bar.txt
+    # public usage
+    !faq
+    !faq <keyword>
 
-The motivation for this order is to allow the operator to have a general
-keyword with the same response in all channels, but override that response in
-specific channels. Additionally, any FAQ responses that come bundled with this
-code will be overridden by *any* operator-created FAQ response that uses the
-same keyword.
 
-The keyword is not case-sensistive, has no spaces, and otherwise lacks any
-characters that would constitute an invalid filename.
+- A simple ``!faq`` in public will case us to list, in public, all keywords
+  we know about in that channel.
 
-To limit the extent to which we can be used for a spam tool, we rate limits
-ourself in *each* moderated channel. See the ``FAQ_*`` options in :mod:`config`
-for the options how many responses we can *burst* in a channel, as well as the
-steady-state *rate* at which we will send responses in a channel. Additionally,
-we won't give the same FAQ response in a channel if we have done so *recently*.
+- ``!faq foo``, where *foo* is a keyword known in that channel, will case us to
+  respond with the FAQ response for *foo*. If we do not have a response, we
+  respond saying so and include a link to the configured source code
+  repository.
 
-FAQ response files can be multiple liness; however, blank lines are ignored and
+If more than one argument is provided, we behave as if we received just
+``!faq``.
+
+
+In private (via a private message)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A FAQ query can take one of four forms:
+
+.. code-block:: text
+
+    # private usage
+    !faq
+    !faq <#chan>
+    !faq <keyword>
+    !faq <#chan> <keyword>
+
+- A simple ``!faq`` will case us to behave as if we received ``!faq
+  all about``, i.e.  we respond with text regarding this bot.
+- ``!faq #bar`` will case us to list all keywords we know about in *#bar*.
+- ``!faq foo`` will case us to behave as if we received ``!faq all foo``.
+- ``!faq #bar foo`` will case us to respond with the FAQ response for *foo* in
+  *#bar*.
+
+In all the above cases where a channel can be specified, instead you can
+provide ``all`` to search the globally known FAQ responses only, as opposed to
+responses known to a specific channel *and* those known globally.
+
+If more than two arguments are provided, we behave as if we received just
+``!faq``.
+
+If we cannot find a FAQ response, we respond saying so and include a link to
+the configured source code repository.
+
+.. note::
+
+    If just one argument is provided and it is not ``all`` or a moderated
+    channel, it is treated as a keyword. Assume *#baz* is **not** a moderated
+    channel.  That means while ``!faq #baz`` *looks like* we should respond
+    with the list of known keywords in *#baz*, since we don't have **any**
+    (it's not moderated), we treat it as a keyword and act as if we received
+    ``!faq all #baz``.
+
+FAQ response file format
+------------------------
+
+FAQ response files can be multiple lines; however, blank lines are ignored and
 leading/trailing whitespace is stripped. Comment lines -- those whose first
 non-whitespace character is '#' -- are also ignored. There is no such thing as
 an end-of-line comment.
@@ -42,6 +86,64 @@ an end-of-line comment.
     This line is printed right after the first, with no blank line in between.
     # This is a comment, thus isn't printed.
     This entire line is printed # because this isn't a comment.
+
+Regardless of the length of the lines in the input file, *paragraphs* are
+wrapped to 400-character-length lines. Paragraphs are separated by a blank
+line.
+
+.. code-block:: text
+
+    This is the first paragraph.
+    This is the second sentence
+    of the first paragraph, and these
+    five lines appear as a single
+    IRC message.
+
+    This is the second paragraph and
+    would start a second IRC message.
+
+FAQ response search order
+-------------------------
+
+FAQ responses can be specific to a moderated channel, or they can be general
+for all channels. Assuming the default WeeChat data directory, when searching
+for the response to FAQ keyword ``bar`` in channel ``#foo``, we search in the
+following places **in order** and select the first FAQ response found:
+
+.. code-block:: text
+
+    ~/.weechat/tmb_data/faq/#foo/bar.txt
+    ~/.weechat/tmb_data/faq/all/bar.txt
+    ~/.weechat/python/faq/#foo/bar.txt
+    ~/.weechat/python/faq/all/bar.txt
+
+**Put your FAQ responses in ``~/.weechat/tmb_data/faq``**. If you believe your
+FAQ response should be bundled with the code, make a pull request, get it
+merged, and then you can pull the latest code and have tne FAQ response in
+``~/.weechat/python/faq``.
+
+The motivation for this order is to allow the operator to have a general
+keyword with the same response in all channels, but override that response in
+specific channels. Additionally, any FAQ responses that come bundled with this
+code will be overridden by *any* operator-created FAQ response that uses the
+same keyword.
+
+Keywords
+--------
+
+The keyword is not case-sensitive, has no spaces, and otherwise lacks any
+characters that would constitute an invalid filename.
+
+Anti-spam
+---------
+
+To limit the extent to which we can be used for a spam tool, we rate limits
+ourself in *each* moderated channel. See the ``FAQ_*`` options in :mod:`config`
+for the options how many responses we can *burst* in a channel, as well as the
+steady-state *rate* at which we will send responses in a channel. Additionally,
+we won't give the same FAQ response in a channel if we have done so *recently*.
+
+
 
 '''
 import weechat
@@ -84,10 +186,18 @@ TB_FUNC = None
 #:
 #: The items in this queue are a tuple::
 #:
-#:    (timestamp, #channel, keyword)
+#:    (timestamp, destination, channel, keyword)
 #:
-#: If this fact changes, then :meth:`_action_done_recently` needs to be updated
+#: If this fact changes, then :meth:`_faq_done_recently` needs to be updated
 RECENT_FAQS = deque()
+#: Reponse template to give when we do not know the answer. The arguments, in
+#: order:
+#: - The channel
+#: - The unknown keyword
+#: - The URL at which to report bugs
+UNKNOWN_FAQ_RESP = 'I do not know about "{1}" in {0}. If I should, please '\
+    'open a ticket at {2}. Also try sending me a private message with '\
+    '"!faq {0}".'
 
 
 def enabled():
@@ -131,99 +241,117 @@ def _send_resp(dest, resp):
         return
     for line in wrap_text(resp, 400):
         line = line.strip()
-        if not len(line) or line[0] == '#':
+        if not len(line):
             continue
         notice(dest, line)
 
 
-def _privmsg_pm_cb(user, receiver, message):
-    ''' PRIVMSG from :class:`tmb_util.userstr.UserStr` to us via PM.
-
-    If we get just '!faq', then we provide help text on how to query the FAQ
-    responses.
-
-    If we get three words, e.g. '!faq #chan foo', then we return the same thing
-    we would return as if we receieved '!faq foo' in #chan.
-
-    If we get two words and they are '!faq all' or '!faq #chan', we return the
-    list of FAQ keywords we known globally or in #chan.
-
-    If we get two words and didn't do the above, e.g. '!faq keyword', then we
-    look for 'keyword' globally (in an 'all/' directory) and return the result.
+def _record_resp(dest, chan, key):
     '''
-    # Sanity check
+    Record the fact that we are saying something in response to "!faq chan
+    key" (or similar, as both *chan* and *key* can be None) in *dest* right
+    now. *dest* can be a channel or a user's nick if sending them a PM.
+
+    Before recording that, however, first check if we even should send to
+    *dest* by spending a token from its token bucket. If the token bucket
+    indicates we are flooding, return False and do NOT record a response as
+    going out. Otherwise returrn True after recording the response going out.
+    '''
+    global RECENT_FAQS
+    global TB_FUNC
+    global TOKEN_BUCKETS
+    if dest not in TOKEN_BUCKETS:
+        TOKEN_BUCKETS[dest] = None
+    wait_time, TOKEN_BUCKETS[dest] = TB_FUNC(TOKEN_BUCKETS[dest])
+    if wait_time > 0:
+        tmb.log(
+            'Indicating we shouldn\'t respond to {}/{} because no more '
+            'tokens for {}', chan, key, dest)
+        return False
+    RECENT_FAQS.append((time.time(), dest, chan, key))
+    return True
+
+
+def _find_response(chan, key, is_pm):
+    ''' Find the appropriate response to keyword *key* in *chan* and return it,
+    or ``None`` if none is found.
+
+    - *chan*: ``#chan`` a moderated channel, ``all``, or ``None``.
+    - *key*: some keyword, or ``None``.
+    - *is_pm*: whether or not the FAQ command came as a PM. We want to know,
+    because we behave different in certain situations based on how we got the
+    message.
+
+    The return value is a single string, but it may have multiple lines. It may
+    or may not have a trailing \n; the caller must handle each case gracefully.
+    '''
+    # Empty '!faq` request
+    if chan is None and key is None:
+        # if it was public, then there must be a channel
+        assert is_pm
+        return _ondisk_response('all', 'about') or \
+            UNKNOWN_FAQ_RESP.format('all', 'about', tmb.code_url())
+    # Only receieved a keyword. This shouldn't happen?
+    elif chan is None:
+        assert key is not None
+        tmb.log(
+            'Asked to find response to {} without a channel. Should be '
+            'impossible. Pretending channel is all', key)
+        return _ondisk_response('all', key) or \
+            UNKNOWN_FAQ_RESP.format('all', key, tmb.code_url())
+    # Only receieved chan or 'all'
+    elif key is None:
+        assert chan is not None
+        keys = list(_list_keywords_in_chan(chan))
+        keys.sort()
+        if chan == 'all':
+            return 'Globally known FAQs: ' + ' '.join(keys)
+        return 'FAQs known in ' + chan + ': ' + ' '.join(keys)
+    # Both a chan (or 'all') and keyword
+    assert chan is not None
+    assert key is not None
+    return _ondisk_response(chan, key) or \
+        UNKNOWN_FAQ_RESP.format(chan, key, tmb.code_url())
+
+
+def _privmsg_pm_cb(user, receiver, message):
+    ''' PRIVMSG from :class:`tmb_util.userstr.UserStr` to us via PM.  '''
     if receiver != tmb.my_nick():
         return
     words = message.lower().split()
     if words[0] != '!faq':
         return
-    help_text = 'Not a valid question. Try or "!faq all" '\
-        'or "!faq #chan" or "!faq #chan keyword" or "!faq keyword"'
     if len(words) == 1 or len(words) > 3:
-        notice(user.nick, help_text)
-        return
-    # if '!faq #chan' or '!faq all'
-    if len(words) == 2 and (words[1] == 'all' or words[1] in tmb.mod_chans()):
-        chan = words[1]
-        keywords = list(_list_keywords_in_chan(chan))
-        keywords.sort()
-        chan_str = 'globally' if chan == 'all' else 'in ' + chan
-        if not len(keywords):
-            s = 'We don\'t know any FAQ responses ' + chan_str
+        chan, key = None, None
+    elif len(words) == 2:
+        if words[1] == 'all' or words[1] in tmb.mod_chans():
+            chan, key = words[1], None
         else:
-            s = 'We known about the following FAQs ' + chan_str + ': ' +\
-                ' '.join(keywords)
-        _send_resp(user.nick, s)
+            chan, key = 'all', words[1]
+    else:
+        chan, key = words[1:]
+    resp = _find_response(chan, key, True)
+    if _faq_done_recently(user.nick, chan, key) or \
+            not _record_resp(user.nick, chan, key):
         return
-    # if '!faq keyword'
-    if len(words) == 2:
-        key = words[1]
-        resp = _find_response('all', key) or _unknown_resp()
-        _send_resp(user.nick, resp)
-    # if '!faq #chan keyword' or '!faq all keyword'
-    if len(words) == 3 and (words[1] == 'all' or words[1] in tmb.mod_chans()):
-        chan = words[1]
-        key = words[2]
-        resp = _find_response(chan, key) or _unknown_resp()
-        _send_resp(user.nick, resp)
-        return
+    _send_resp(user.nick, resp)
 
 
 def _privmsg_modchan_cb(user, receiver, message):
-    # Sanity check
     if receiver not in tmb.mod_chans():
         return
     words = message.lower().split()
-    # Determine if this is a message asking us to paste a FAQ response
-    if len(words) != 2 or words[0] != '!faq':
+    if words[0] != '!faq':
         return
-    keyword = words[1]
-    # Find the response, if any. Will be None if we have no response.
-    resp = _find_response(receiver, keyword)
-    if not resp:
-        tmb.log(
-            '{} asked for FAQ {} in {}, but not known',
-            user.nick, keyword, receiver)
-        resp = _unknown_resp()
-    # Make sure we haven't pasted this response too recently
-    if _faq_done_recently(receiver, keyword):
-        tmb.log('{} in {} done recently, so skipping', keyword, receiver)
+    if len(words) == 1 or len(words) > 2:
+        chan, key = receiver, None
+    else:
+        chan, key = receiver, words[1]
+    resp = _find_response(chan, key, False)
+    if _faq_done_recently(receiver, chan, key) or \
+            not _record_resp(receiver, chan, key):
         return
-    # Add the channel to our state, if needed
-    if receiver not in TOKEN_BUCKETS:
-        TOKEN_BUCKETS[receiver] = None
-    # Take a token from the channel and update its state
-    wait_time, TOKEN_BUCKETS[receiver] = TB_FUNC(TOKEN_BUCKETS[receiver])
-    # A positive wait_time indicates that we've run out of tokens, thus are
-    # flooding. Just do not respond.
-    if wait_time > 0:
-        tmb.log(
-            'Not responding to {} FAQ from {} because no more tokens',
-            message, user.nick)
-        return
-    # Send the response
     _send_resp(receiver, resp)
-    RECENT_FAQS.append((time.time(), receiver, keyword))
 
 
 def privmsg_cb(user, receiver, message):
@@ -243,7 +371,7 @@ def privmsg_cb(user, receiver, message):
     return _privmsg_modchan_cb(user, receiver, message)
 
 
-def _find_response(chan, keyword):
+def _ondisk_response(chan, keyword):
     ''' Find a response file that we have saved for channel ``chan`` that is
     keyed with ``keyword``. If no such response can be found, return ``None``,
     otherwise the response in its entirety. Note that the response could be a
@@ -256,7 +384,13 @@ def _find_response(chan, keyword):
         fname = os.path.join(d, base)
         if os.path.exists(fname) and not os.path.isdir(fname):
             with open(fname, 'rt') as fd:
-                return fd.read()
+                s = ''
+                for line in fd:
+                    line = line.strip()
+                    if not len(line) or line[0] == '#':
+                        continue
+                    s += line + '\n'
+                return s
     return None
 
 
@@ -294,16 +428,20 @@ def _unknown_resp():
     return w.config_get_plugin(_conf_key('unknown'))
 
 
-def _faq_done_recently(chan, faq):
-    ''' Returns True if we've shared the given FAQ in the given channel
-    recently, otherwise False '''
+def _faq_done_recently(dest, chan, key):
+    ''' Returns True if we've given *chan's* *key* FAQ response in *dest*
+    recently, otherwise False.
+
+    Both chan and key can be None without it being an error.
+    '''
     global RECENT_FAQS
     # Cleanup of any FAQs not recent anymore
     now = time.time()
     while len(RECENT_FAQS) and RECENT_FAQS[0][0] + _recent() < now:
         RECENT_FAQS.popleft()
-    for ts, chan_i, faq_i in RECENT_FAQS:
-        if (chan_i, faq_i) == (chan, faq):
+    # Check if the given FAQ was done recently
+    for ts, dest_i, chan_i, key_i in RECENT_FAQS:
+        if (dest_i, chan_i, key_i) == (dest, chan, key):
             return True
     return False
 

@@ -45,6 +45,8 @@ MSG_BURST = '5'
 #: steady state. To be safe, set this slightly higher than whatever the IRCd
 #: actually requires.
 MSG_RATE = '505'
+#: Where the source code for this bot is hosted
+CODE_URL = 'https://gitlab.torproject.org/pastly/weechat-tormodbot'
 
 # ### antiflood.py configuration options ####
 #: Whether to enable the :mod:`tmb_mod.antiflood` module
@@ -130,11 +132,6 @@ FAQ_RATE = '5000'
 #: How long, in seconds, we must wait between given *the same* FAQ response in
 #: the same channel.
 FAQ_RECENT = '120'
-#: The response to give when asked for a FAQ keyword to which we don't know the
-#: response. This is used in all channels.
-FAQ_UNKNOWN = 'I don\'t know about that. If I should, open a ticket at '\
-    'https://gitlab.torproject.org/pastly/weechat-tormodbot. Also try '\
-    'sending me a PM with !faq or !faq #chan'
 
 conf = {
     'serv': SERV,
@@ -147,6 +144,7 @@ conf = {
     'chanserv_userstr': CHANSERV_USERSTR,
     'msg_burst': MSG_BURST,
     'msg_rate': MSG_RATE,
+    'code_url': CODE_URL,
     'autovoice_enabled': AUTOVOICE_ENABLED,
     'autovoice_regex_always': AUTOVOICE_REGEX_ALWAYS,
     'autovoice_regex_registered': AUTOVOICE_REGEX_REGISTERED,
@@ -169,5 +167,4 @@ conf = {
     'faq_burst': FAQ_BURST,
     'faq_rate': FAQ_RATE,
     'faq_recent': FAQ_RECENT,
-    'faq_unknown': FAQ_UNKNOWN,
 }

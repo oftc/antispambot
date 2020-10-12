@@ -109,6 +109,10 @@ def codedir():
     return os.path.abspath(os.path.dirname(__file__))
 
 
+def code_url():
+    return CONF['code_url']
+
+
 def timer_cb(data, remaining_calls):
     ''' Whenever a timer expires, this function should be called. If data is
     set, then it was that module that set a timer that expired, so we should
