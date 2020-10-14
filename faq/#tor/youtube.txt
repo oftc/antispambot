@@ -1,4 +1,6 @@
-YouTube is broken in Tor Browser 10. Please see this ticket for why and a hack
-https://gitlab.torproject.org/tpo/applications/tor-browser/-/issues/40140. Some
-people use invidious as a proxy to YouTube https://www.invidio.us/. Others use
-youtube-dl to download videos over Tor to watch locally.
+YouTube is broken in Tor Browser 10.0.0 on Windows 10. Updating to TB 10.0.1
+fixes the problem. Please see this ticket for more information.
+https://gitlab.torproject.org/tpo/applications/tor-browser/-/issues/40140.
+
+Some people use invidious as a proxy to YouTube https://www.invidio.us/. Others
+use youtube-dl to download videos over Tor to watch locally.
