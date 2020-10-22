@@ -119,7 +119,7 @@ HELLO_NEW_MSGS = '2'
 HELLO_MANUAL_ENABLED = 'on'
 #: The amount of time, in seconds, that must pass before we will send our
 #: autoreponse in a a specific channel again
-HELLO_INTERVAL = '60'
+HELLO_INTERVAL = '180'
 
 # ### faq.py configuration options ###
 #: Whether to enable the :mod:`tmb_mod.faq` module
