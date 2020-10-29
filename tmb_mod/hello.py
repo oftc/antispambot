@@ -30,79 +30,67 @@ import tormodbot as tmb
 # other modules/packages
 from tmb_util.lcsv import lcsv
 from tmb_util.msg import notice
+from . import Module
 
-#: The name of this module (wow such good comment)
-MOD_NAME = 'hello'
 # To make calling weechat stuff take fewer characters
 w = weechat
-#: sqlite3 database for this module. Use :meth:`db_fname` to get the real full
-#: path; this here is relative to this module's data directory
-DB_FNAME = 'data.db'
-#: Keep track of last time we sent a manual autoreponse in each channel so we
-#: don't spam.
-LAST_RESPONSE = {}
 
 
-def enabled():
-    ''' Main tormodbot code calls this to see if this module is enabled '''
-    a = w.config_string_to_boolean(w.config_get_plugin(_conf_key('enabled')))
-    return a
+class HelloModule(Module):
+    ''' See the module-level documentation '''
+    NAME = 'hello'
 
+    def __init__(self):
+        #: Keep track of last time we sent a manual autoreponse in each channel
+        #: so we don't spam.
+        self.last_response = {}
 
-def datadir():
-    ''' Return the datadir for this specific module '''
-    return os.path.join(tmb.datadir(), MOD_NAME)
+    def _datadir(self):
+        ''' Return the datadir for this specific module '''
+        return os.path.join(tmb.datadir(), self.NAME)
 
+    def _db_fname(self):
+        ''' Returns the full path to the sqlite3 database for this module '''
+        return os.path.join(self._datadir(), 'data.db')
 
-def db_fname():
-    ''' Returns the full path to the sqlite3 database for this module '''
-    return os.path.join(datadir(), DB_FNAME)
+    def msg_max_len(self):
+        return int(w.config_get_plugin(self._conf_key('msg_max_len')))
 
+    def hello_words(self):
+        return set(lcsv(w.config_get_plugin(self._conf_key('hello_words'))))
 
-def msg_max_len():
-    return int(w.config_get_plugin(_conf_key('msg_max_len')))
+    def new_joins(self):
+        ''' Return maximum number of joins in a channel we can see from a nick
+        and still consider the nick a new user '''
+        return int(w.config_get_plugin(self._conf_key('new_joins')))
 
+    def new_msgs(self):
+        ''' Return maximum number of messages in a channel we can see from a
+        nick and still consider the nick a new user '''
+        return int(w.config_get_plugin(self._conf_key('new_msgs')))
 
-def hello_words():
-    return set(lcsv(w.config_get_plugin(_conf_key('hello_words'))))
+    def interval(self):
+        return int(w.config_get_plugin(self._conf_key('interval')))
 
+    def response_for_chan(self, chan):
+        ''' Returns the response we have for *chan*, or ``None`` if no
+        configured response '''
+        key = self._conf_key('response_' + chan)
+        if not w.config_is_set_plugin(key):
+            # tmb.log('{} is not set', key)
+            return None
+        val = w.config_get_plugin(key)
+        val = val.strip()
+        if not len(val):
+            # tmb.log('{} has no len', key)
+            return None
+        return val
 
-def new_joins():
-    ''' Return maximum number of joins in a channel we can see from a nick and
-    still consider the nick a new user '''
-    return int(w.config_get_plugin(_conf_key('new_joins')))
-
-
-def new_msgs():
-    ''' Return maximum number of messages in a channel we can see from a nick
-    and still consider the nick a new user '''
-    return int(w.config_get_plugin(_conf_key('new_msgs')))
-
-
-def interval():
-    return int(w.config_get_plugin(_conf_key('interval')))
-
-
-def response_for_chan(chan):
-    ''' Returns the response we have for *chan*, or ``None`` if no configured
-    response '''
-    key = _conf_key('response_' + chan)
-    if not w.config_is_set_plugin(key):
-        # tmb.log('{} is not set', key)
-        return None
-    val = w.config_get_plugin(key)
-    val = val.strip()
-    if not len(val):
-        # tmb.log('{} has no len', key)
-        return None
-    return val
-
-
-def initialize():
-    ''' Called whenever we are (re)starting '''
-    w.mkdir(datadir(), 0o755)
-    db_conn = sqlite3.connect(db_fname())
-    joins_schema = '''
+    def initialize(self):
+        ''' Called whenever we are (re)starting '''
+        w.mkdir(self._datadir(), 0o755)
+        db_conn = sqlite3.connect(self._db_fname())
+        joins_schema = '''
 CREATE TABLE IF NOT EXISTS joins (
     nick TEXT NOT NULL,
     chan TEXT NOT NULL,
@@ -110,7 +98,7 @@ CREATE TABLE IF NOT EXISTS joins (
     count INTEGER DEFAULT 0,
     PRIMARY KEY (nick, chan)
 );'''
-    msgs_schema = '''
+        msgs_schema = '''
 CREATE TABLE IF NOT EXISTS msgs (
     nick TEXT NOT NULL,
     chan TEXT NOT NULL,
@@ -118,7 +106,7 @@ CREATE TABLE IF NOT EXISTS msgs (
     count INTEGER DEFAULT 0,
     PRIMARY KEY (nick, chan)
 );'''
-    ignores_schema = '''
+        ignores_schema = '''
 CREATE TABLE IF NOT EXISTS ignores (
     nick TEXT NOT NULL,
     chan TEXT NOT NULL,
@@ -126,256 +114,224 @@ CREATE TABLE IF NOT EXISTS ignores (
     PRIMARY KEY (nick, chan)
 );
 '''
-    with db_conn:
-        db_conn.execute(joins_schema)
-        db_conn.execute(msgs_schema)
-        db_conn.execute(ignores_schema)
-    db_conn.close()
+        with db_conn:
+            db_conn.execute(joins_schema)
+            db_conn.execute(msgs_schema)
+            db_conn.execute(ignores_schema)
+        db_conn.close()
 
+    def join_cb(self, user, chan):
+        ''' Main tormodbot code calls into this when we're enabled and the
+        given :class:`tmb_util.userstr.UserStr` has joined the given channel
+        '''
+        self._update_join_table(user.nick, chan)
 
-def notice_cb(sender, receiver, message):
-    ''' Main tormodbot code calls into this when we're enabled and have
-    received a notice message '''
-    pass
+    def privmsg_cb(self, user, receiver, message):
+        ''' Main tormodbot code calls into this when we're enabled and the
+        given :class:`tmb_util.userstr.UserStr` has sent ``message`` (``str``)
+        to ``recevier`` (``str``). The receiver can be a channel ("#foo") or a
+        nick ("foo").  '''
+        # The first two are sanity checks: that the receiver is a non-empty
+        # string and that it looks like a channel name.
+        # The third check is that it is one of our moderated channels. We only
+        # care about those.
+        receiver = receiver.lower()
+        if not len(receiver) or \
+                receiver[0] != '#' or \
+                receiver not in tmb.mod_chans():
+            return
+        self._update_msgs_table(user.nick, receiver)
+        # If we don't have a configured response for this channel, then there's
+        # no reason going any farther, because we have nothing to say.
+        response = self.response_for_chan(receiver)
+        if not response:
+            # tmb.log('No response for {}', receiver)
+            return
+        # If we sent something to this channel too recently, don't let
+        # ourselves spam
+        if self._too_soon(receiver):
+            # tmb.log('It\'s too soon to autorespond in {} again', receiver)
+            return
+        # Okay we should do something about this message. Act differently based
+        # on what type of message it looks like
+        if self._is_manual_command(message):
+            self._handle_manual_command(user, receiver, message)
+            return
+        if self._seems_like_hello_msg(message):
+            self._handle_hello_msg(user, receiver, message)
+            return
 
+    def _handle_manual_command(self, user, chan, message):
+        # should have been checked already
+        if not self._is_manual_command(message):
+            return
+        words = message.lower().strip().split()
+        # If we don't have a configured response for this channel, then there's
+        # no reason going any farther, because we have nothing to say.
+        response = self.response_for_chan(chan)
+        if not response:
+            # tmb.log('No response for {}', receiver)
+            return
+        # If there's a nick in the !hello command like '!hello pastly', then
+        # direct the response to that nick
+        if len(words) == 2:
+            response = '{}: {}'.format(words[1], response)
+        notice(chan, response)
+        self.last_response[chan] = time.time()
 
-def join_cb(user, chan):
-    ''' Main tormodbot code calls into this when we're enabled and the given
-    :class:`tmb_util.userstr.UserStr` has joined the given channel '''
-    _update_join_table(user.nick, chan)
-
-
-def privmsg_cb(user, receiver, message):
-    ''' Main tormodbot code calls into this when we're enabled and the given
-    :class:`tmb_util.userstr.UserStr` has sent ``message`` (``str``) to
-    ``recevier`` (``str``). The receiver can be a channel ("#foo") or a nick
-    ("foo").
-    '''
-    # The first two are sanity checks: that the receiver is a non-empty string
-    # and that it looks like a channel name.
-    # The third check is that it is one of our moderated channels. We only care
-    # about those.
-    receiver = receiver.lower()
-    if not len(receiver) or \
-            receiver[0] != '#' or \
-            receiver not in tmb.mod_chans():
+    def _handle_hello_msg(self, user, chan, message):
+        ''' *message* has been determined to be a "hello?" type message. Handle
+        our response to that as necessary '''
+        # If no response for this channel, don't do anything. This should have
+        # been already checked, but check again
+        response = self.response_for_chan(chan)
+        if not response:
+            return
+        # If this user should be ignored, return early
+        if self._should_ignore(user.nick, chan):
+            # tmb.log('{} should be ignored in {}', user.nick, chan)
+            return
+        # If the message itself doesn't seem like a "hello?" type message,
+        # return early
+        if not self._seems_like_hello_msg(message):
+            # tmb.log('"{}" is not a hello msg', message)
+            return
+        # If the user's history does not suggest they need an automated
+        # response, return early
+        if not self._seems_like_new_user(user.nick, chan):
+            # tmb.log('{} is not a new user', user.nick)
+            return
+        # Yup. We should send the automated response.
+        response = '{}: {}'.format(user.nick, response)
+        notice(chan, response)
+        self.last_response[chan] = time.time()
+        self._update_ignore_table(user.nick, chan, True)
         return
-    _update_msgs_table(user.nick, receiver)
-    # If we don't have a configured response for this channel, then there's no
-    # reason going any farther, because we have nothing to say.
-    response = response_for_chan(receiver)
-    if not response:
-        # tmb.log('No response for {}', receiver)
-        return
-    # If we sent something to this channel too recently, don't let ourselves
-    # spam
-    if _too_soon(receiver):
-        # tmb.log('It\'s too soon to autorespond in {} again', receiver)
-        return
-    # Okay we should do something about this message. Act differently based on
-    # what type of message it looks like
-    if _is_manual_command(message):
-        _handle_manual_command(user, receiver, message)
-        return
-    if _seems_like_hello_msg(message):
-        _handle_hello_msg(user, receiver, message)
-        return
 
-
-def _handle_manual_command(user, chan, message):
-    # should have been checked already
-    if not _is_manual_command(message):
-        return
-    words = message.lower().strip().split()
-    # If we don't have a configured response for this channel, then there's no
-    # reason going any farther, because we have nothing to say.
-    response = response_for_chan(chan)
-    if not response:
-        # tmb.log('No response for {}', receiver)
-        return
-    # If there's a nick in the !hello command like '!hello pastly', then direct
-    # the response to that nick
-    if len(words) == 2:
-        response = '{}: {}'.format(words[1], response)
-    notice(chan, response)
-    global LAST_RESPONSE
-    LAST_RESPONSE[chan] = time.time()
-
-
-def _handle_hello_msg(user, chan, message):
-    ''' *message* has been determined to be a "hello?" type message. Handle our
-    response to that as necessary '''
-    # If no response for this channel, don't do anything. This should have been
-    # already checked, but check again
-    response = response_for_chan(chan)
-    if not response:
-        return
-    # If this user should be ignored, return early
-    if _should_ignore(user.nick, chan):
-        # tmb.log('{} should be ignored in {}', user.nick, chan)
-        return
-    # If the message itself doesn't seem like a "hello?" type message, return
-    # early
-    if not _seems_like_hello_msg(message):
-        # tmb.log('"{}" is not a hello msg', message)
-        return
-    # If the user's history does not suggest they need an automated response,
-    # return early
-    if not _seems_like_new_user(user.nick, chan):
-        # tmb.log('{} is not a new user', user.nick)
-        return
-    # Yup. We should send the automated response.
-    response = '{}: {}'.format(user.nick, response)
-    notice(chan, response)
-    global LAST_RESPONSE
-    LAST_RESPONSE[chan] = time.time()
-    _update_ignore_table(user.nick, chan, True)
-    return
-
-
-def _conf_key(s):
-    ''' This modules config options are all prefixed with the module name and
-    an underscore. Prefix the given string with that.
-
-    >>> conf_key('enabled')
-    'antiflood_enabled'
-    '''
-    s = MOD_NAME + '_' + s
-    return s
-
-
-def _update_join_table(nick, chan):
-    ''' Someone has joined a channel, so update the table accordingly '''
-    db_conn = sqlite3.connect(db_fname())
-    # SQL to insert the row if possible
-    insert = '''
+    def _update_join_table(self, nick, chan):
+        ''' Someone has joined a channel, so update the table accordingly '''
+        db_conn = sqlite3.connect(self._db_fname())
+        # SQL to insert the row if possible
+        insert = '''
 INSERT OR IGNORE INTO joins (nick, chan) VALUES (?, ?);
 '''
-    # Now we definitely have a row, so increment the count and update the last
-    # join time
-    increment = '''
+        # Now we definitely have a row, so increment the count and update the
+        # last join time
+        increment = '''
 UPDATE joins
 SET count = count + 1, last = ?
 WHERE nick = ? AND chan = ?;
 '''
-    with db_conn:
-        db_conn.execute(insert, (nick, chan))
-        db_conn.execute(increment, (int(time.time()), nick, chan))
-    db_conn.close()
+        with db_conn:
+            db_conn.execute(insert, (nick, chan))
+            db_conn.execute(increment, (int(time.time()), nick, chan))
+        db_conn.close()
 
-
-def _update_msgs_table(nick, chan):
-    ''' Someone has sent a message in channel, so update the table accordingly
-    '''
-    db_conn = sqlite3.connect(db_fname())
-    # SQL to insert the row if possible
-    insert = '''
+    def _update_msgs_table(self, nick, chan):
+        ''' Someone has sent a message in channel, so update the table
+        accordingly '''
+        db_conn = sqlite3.connect(self._db_fname())
+        # SQL to insert the row if possible
+        insert = '''
 INSERT OR IGNORE INTO msgs (nick, chan) VALUES (?, ?);
 '''
-    # Now we definitely have a row, so increment the count and update the last
-    # msg time
-    increment = '''
+        # Now we definitely have a row, so increment the count and update the
+        # last msg time
+        increment = '''
 UPDATE msgs
 SET count = count + 1, last = ?
 WHERE nick = ? AND chan = ?;
 '''
-    with db_conn:
-        db_conn.execute(insert, (nick, chan))
-        db_conn.execute(increment, (int(time.time()), nick, chan))
-    db_conn.close()
+        with db_conn:
+            db_conn.execute(insert, (nick, chan))
+            db_conn.execute(increment, (int(time.time()), nick, chan))
+        db_conn.close()
 
-
-def _update_ignore_table(nick, chan, should_ignore):
-    db_conn = sqlite3.connect(db_fname())
-    # SQL to insert the row if possible
-    insert = '''
+    def _update_ignore_table(self, nick, chan, should_ignore):
+        db_conn = sqlite3.connect(self._db_fname())
+        # SQL to insert the row if possible
+        insert = '''
 INSERT OR IGNORE INTO ignores (nick, chan) VALUES (?, ?);
 '''
-    update = '''
+        update = '''
 UPDATE ignores
 SET ignore = ? WHERE nick = ? AND chan = ?;
 '''
-    with db_conn:
-        db_conn.execute(insert, (nick, chan))
-        db_conn.execute(update, (1 if should_ignore else 0, nick, chan))
-    db_conn.close()
+        with db_conn:
+            db_conn.execute(insert, (nick, chan))
+            db_conn.execute(update, (1 if should_ignore else 0, nick, chan))
+        db_conn.close()
 
-
-def _seems_like_hello_msg(s):
-    ''' Return whether or not the given message *s* seems to be a "hello
-    message" that would indicate a copy/paste response may be necessary '''
-    s = s.lower().strip()
-    # Probably not a 'hello?' if more than 20 chars
-    if len(s) >= msg_max_len():
+    def _seems_like_hello_msg(self, s):
+        ''' Return whether or not the given message *s* seems to be a "hello
+        message" that would indicate a copy/paste response may be necessary '''
+        s = s.lower().strip()
+        # Probably not a 'hello?' if more than 20 chars
+        if len(s) >= self.msg_max_len():
+            return False
+        # Remove all non-alphanum chars, and keep spaces for word boundaries
+        s = ''.join([c for c in s if c.isalnum() or c == ' '])
+        # Check if any of the words in the message are a "hello?" word
+        hello_words_ = self.hello_words()
+        for word in s.split():
+            if word in hello_words_:
+                return True
         return False
-    # Remove all non-alphanum chars, and keep spaces for word boundaries
-    s = ''.join([c for c in s if c.isalnum() or c == ' '])
-    # Check if any of the words in the message are a "hello?" word
-    hello_words_ = hello_words()
-    for word in s.split():
-        if word in hello_words_:
+
+    def _seems_like_new_user(self, nick, chan):
+        ''' Return whether or not this user seems new enough to deserve an
+        automated response if they sent a "hello?" message '''
+        seems_new = True
+        joins_query = 'SELECT count FROM joins WHERE nick = ? AND chan = ?;'
+        msgs_query = 'SELECT count FROM msgs WHERE nick = ? AND chan = ?;'
+        db_conn = sqlite3.connect(self._db_fname())
+        db_conn.row_factory = sqlite3.Row
+        with db_conn:
+            for row in db_conn.execute(joins_query, (nick, chan)):
+                # should just be 0 or 1 row, but whatever do it "multiple
+                # times" in a for loop
+                if row['count'] > self.new_joins():
+                    seems_new = False
+                    break
+            for row in db_conn.execute(msgs_query, (nick, chan)):
+                # should just be 0 or 1 row, but whatever do it "multiple
+                # times" in a for loop
+                if row['count'] > self.new_msgs():
+                    seems_new = False
+                    break
+        db_conn.close()
+        return seems_new
+
+    def _should_ignore(self, nick, chan):
+        ''' Return whether or not we should ignore this nick in this channel,
+        allowing them to send "hello?" messages '''
+        should_ignore = False
+        db_conn = sqlite3.connect(self._db_fname())
+        db_conn.row_factory = sqlite3.Row
+        query = 'SELECT ignore FROM ignores WHERE nick = ? AND chan = ?;'
+        with db_conn:
+            for row in db_conn.execute(query, (nick, chan)):
+                # should just be 0 or 1 row, but do it "multiple times" anyway
+                should_ignore = not not row['ignore']
+        db_conn.close()
+        return should_ignore
+
+    def _is_manual_command(self, message):
+        message = message.lower().strip()
+        words = message.split()
+        # Either '!hello' or '!hello pastly' should be the message
+        if len(words) != 1 and len(words) != 2:
+            return False
+        return words[0] == '!hello'
+
+    def _too_soon(self, chan):
+        ''' Return whether or not it's too soon to send the automated response
+        on *chan* again '''
+        if chan not in self.last_response:
+            # no record of saying our response in this channel, so not too soon
+            return False
+        now = time.time()
+        if self.last_response[chan] + self.interval() > now:
+            # Not enough time has passed, so too soon
             return True
-    return False
-
-
-def _seems_like_new_user(nick, chan):
-    ''' Return whether or not this user seems new enough to deserve an
-    automated response if they sent a "hello?" message '''
-    seems_new = True
-    joins_query = 'SELECT count FROM joins WHERE nick = ? AND chan = ?;'
-    msgs_query = 'SELECT count FROM msgs WHERE nick = ? AND chan = ?;'
-    db_conn = sqlite3.connect(db_fname())
-    db_conn.row_factory = sqlite3.Row
-    with db_conn:
-        for row in db_conn.execute(joins_query, (nick, chan)):
-            # should just be 0 or 1 row, but whatever do it "multiple times" in
-            # a for loop
-            if row['count'] > new_joins():
-                seems_new = False
-                break
-        for row in db_conn.execute(msgs_query, (nick, chan)):
-            # should just be 0 or 1 row, but whatever do it "multiple times" in
-            # a for loop
-            if row['count'] > new_msgs():
-                seems_new = False
-                break
-    db_conn.close()
-    return seems_new
-
-
-def _should_ignore(nick, chan):
-    ''' Return whether or not we should ignore this nick in this channel,
-    allowing them to send "hello?" messages '''
-    should_ignore = False
-    db_conn = sqlite3.connect(db_fname())
-    db_conn.row_factory = sqlite3.Row
-    query = 'SELECT ignore FROM ignores WHERE nick = ? AND chan = ?;'
-    with db_conn:
-        for row in db_conn.execute(query, (nick, chan)):
-            # should just be 0 or 1 row, but do it "multiple times" anyway
-            should_ignore = not not row['ignore']
-    db_conn.close()
-    return should_ignore
-
-
-def _is_manual_command(message):
-    message = message.lower().strip()
-    words = message.split()
-    # Either '!hello' or '!hello pastly' should be the message
-    if len(words) != 1 and len(words) != 2:
         return False
-    return words[0] == '!hello'
-
-
-def _too_soon(chan):
-    ''' Return whether or not it's too soon to send the automated response on
-    *chan* again '''
-    global LAST_RESPONSE
-    if chan not in LAST_RESPONSE:
-        # no record of saying our response in this channel, so not too soon
-        return False
-    now = time.time()
-    if LAST_RESPONSE[chan] + interval() > now:
-        # Not enough time has passed, so too soon
-        return True
-    return False

@@ -158,38 +158,11 @@ import tormodbot as tmb
 from tmb_util.msg import notice
 from tmb_util.tokenbucket import token_bucket
 from tmb_util.wordwrap import wrap_text
+from . import Module
 
 
 # To make calling weechat stuff take fewer characters
 w = weechat
-#: The name of this module (wow such good comment)
-MOD_NAME = 'faq'
-#: Store per-``chan`` token buckets so we prevent ourselves from flooding when
-#: used as a toy
-TOKEN_BUCKETS = {}
-#: Function to call every time we send a message to take away a token from
-#: that channel's bucket. The function takes the channels's state as an
-#: argument and returns ``(wait_time, new_state)``. ``wait_time`` is the amount
-#: of time we need to wait until we would have a non-zero number of tokens left
-#: (so if we currently have tokens for this channel, ``wait_time`` is 0), and
-#: ``new_state`` is the channels's updated state that should be passed in next
-#: time.
-#:
-#: TODO: Be able to update this function's parameters if weechat's config
-#: changes
-TB_FUNC = None
-#: A FIFO list of responses we've recently made. This is used to not
-#: repeat ourselves in case we are asked to paste the same FAQ rapidly.
-#:
-#: Append responses that you are taking to the **right** and cleanup old ones
-#: from the **left**.
-#:
-#: The items in this queue are a tuple::
-#:
-#:    (timestamp, destination, channel, keyword)
-#:
-#: If this fact changes, then :meth:`_faq_done_recently` needs to be updated
-RECENT_FAQS = deque()
 #: Reponse template to give when we do not know the answer. The arguments, in
 #: order:
 #: - The channel
@@ -200,39 +173,245 @@ UNKNOWN_FAQ_RESP = 'I do not know about "{1}" in {0}. If I should, please '\
     '"!faq {0}".'
 
 
-def enabled():
-    ''' Main tormodbot code calls this to see if this module is enabled '''
-    a = w.config_string_to_boolean(w.config_get_plugin(_conf_key('enabled')))
-    return a
+class FAQModule(Module):
+    ''' See the module-level documentation '''
+    NAME = 'faq'
 
+    def __init__(self):
+        #: Store per-``chan`` token buckets so we prevent ourselves from
+        #: flooding when used as a toy
+        self.token_buckets = {}
+        #: Function to call every time we send a message to take away a token
+        #: from that channel's bucket. The function takes the channels's state
+        #: as an argument and returns ``(wait_time, new_state)``. ``wait_time``
+        #: is the amount of time we need to wait until we would have a non-zero
+        #: number of tokens left (so if we currently have tokens for this
+        #: channel, ``wait_time`` is 0), and ``new_state`` is the channels's
+        #: updated state that should be passed in next time.
+        self.tb_func = token_bucket(self._tb_size(), self._tb_rate())
+        #: A FIFO list of responses we've recently made. This is used to not
+        #: repeat ourselves in case we are asked to paste the same FAQ rapidly.
+        #:
+        #: Append responses that you are taking to the **right** and cleanup
+        #: old ones from the **left**.
+        #:
+        #: The items in this queue are a tuple::
+        #:
+        #:    (timestamp, destination, channel, keyword)
+        #:
+        #: If this fact changes, then :meth:`_faq_done_recently` needs to be
+        #: updated
+        self.recent_faqs = deque()
 
-def datadir():
-    ''' Return the datadir for this specific module '''
-    return os.path.join(tmb.datadir(), MOD_NAME)
+    def initialize(self):
+        ''' Called whenever we are (re)starting '''
+        w.mkdir(self._datadir(), 0o755)
+        self.tb_func = token_bucket(self._tb_size(), self._tb_rate())
 
+    def _datadir(self):
+        ''' Return the datadir for this specific module '''
+        return os.path.join(tmb.datadir(), self.NAME)
 
-def _bundled_faq_dir():
-    ''' The directory in which the bundled FAQ responses are stored '''
-    return os.path.join(tmb.codedir(), MOD_NAME)
+    def _bundled_faq_dir(self):
+        ''' The directory in which the bundled FAQ responses are stored '''
+        return os.path.join(tmb.codedir(), self.NAME)
 
+    def _tb_size(self):
+        ''' How many tokens (FAQ responses) we may burst in a channel before we
+        must respect our self-imposed rate limit '''
+        return int(w.config_get_plugin(self._conf_key('burst')))
 
-def initialize():
-    ''' Called whenever we are (re)starting '''
-    global TB_FUNC
-    w.mkdir(datadir(), 0o755)
-    TB_FUNC = token_bucket(_tb_size(), _tb_rate())
+    def _tb_rate(self):
+        ''' The amount of time, in seconds, that must pass before the we earn
+        another token '''
+        return float(w.config_get_plugin(self._conf_key('rate'))) / 1000
 
+    def _recent(self):
+        ''' The amount of time, in seconds, that must pass before we will say
+        the same FAQ response in the same channel again. '''
+        return int(w.config_get_plugin(self._conf_key('recent')))
 
-def notice_cb(sender, receiver, message):
-    ''' Main tormodbot code calls into this when we're enabled and have
-    received a notice message '''
-    pass
+    def _unknown_resp(self):
+        ''' The response to give when there is no configured response '''
+        return w.config_get_plugin(self._conf_key('unknown'))
 
+    def _record_resp(self, dest, chan, key):
+        '''
+        Record the fact that we are saying something in response to "!faq chan
+        key" (or similar, as both *chan* and *key* can be None) in *dest* right
+        now. *dest* can be a channel or a user's nick if sending them a PM.
 
-def join_cb(user, chan):
-    ''' Main tormodbot code calls into this when we're enabled and the given
-    :class:`tmb_util.userstr.UserStr` has joined the given channel '''
-    pass
+        Before recording that, however, first check if we even should send to
+        *dest* by spending a token from its token bucket. If the token bucket
+        indicates we are flooding, return False and do NOT record a response as
+        going out. Otherwise returrn True after recording the response going
+        out.  '''
+        if dest not in self.token_buckets:
+            self.token_buckets[dest] = None
+        wait_time, self.token_buckets[dest] = \
+            self.tb_func(self.token_buckets[dest])
+        if wait_time > 0:
+            tmb.log(
+                'Indicating we shouldn\'t respond to {}/{} because no more '
+                'tokens for {}', chan, key, dest)
+            return False
+        self.recent_faqs.append((time.time(), dest, chan, key))
+        return True
+
+    def _privmsg_pm_cb(self, user, receiver, message):
+        ''' PRIVMSG from :class:`tmb_util.userstr.UserStr` to us via PM.  '''
+        if receiver != tmb.my_nick():
+            return
+        words = message.lower().split()
+        if words[0] != '!faq':
+            return
+        if len(words) == 1 or len(words) > 3:
+            chan, key = None, None
+        elif len(words) == 2:
+            if words[1] == 'all' or words[1] in tmb.mod_chans():
+                chan, key = words[1], None
+            else:
+                chan, key = 'all', words[1]
+        else:
+            chan, key = words[1:]
+        resp = self._find_response(chan, key, True)
+        if self._faq_done_recently(user.nick, chan, key) or \
+                not self._record_resp(user.nick, chan, key):
+            return
+        _send_resp(user.nick, resp)
+
+    def _privmsg_modchan_cb(self, user, receiver, message):
+        if receiver not in tmb.mod_chans():
+            return
+        words = message.lower().split()
+        if words[0] != '!faq':
+            return
+        if len(words) == 1 or len(words) > 2:
+            chan, key = receiver, None
+        else:
+            chan, key = receiver, words[1]
+        resp = self._find_response(chan, key, False)
+        if self._faq_done_recently(receiver, chan, key) or \
+                not self._record_resp(receiver, chan, key):
+            return
+        _send_resp(receiver, resp)
+
+    def privmsg_cb(self, user, receiver, message):
+        ''' Main tormodbot code calls into this when we're enabled and the
+        given :class:`tmb_util.userstr.UserStr` has sent ``message`` (``str``)
+        to ``recevier`` (``str``). The receiver can be a channel ("#foo") or a
+        nick ("foo").  '''
+        if not len(message) or not message.lower().split()[0] == '!faq':
+            return
+        receiver = receiver.lower()
+        if receiver == tmb.my_nick():
+            return self._privmsg_pm_cb(user, receiver, message)
+        return self._privmsg_modchan_cb(user, receiver, message)
+
+    def _faq_done_recently(self, dest, chan, key):
+        ''' Returns True if we've given *chan's* *key* FAQ response in *dest*
+        recently, otherwise False.
+
+        Both chan and key can be None without it being an error.
+        '''
+        # Cleanup of any FAQs not recent anymore
+        now = time.time()
+        while len(self.recent_faqs) and \
+                self.recent_faqs[0][0] + self._recent() < now:
+            self.recent_faqs.popleft()
+        # Check if the given FAQ was done recently
+        for ts, dest_i, chan_i, key_i in self.recent_faqs:
+            if (dest_i, chan_i, key_i) == (dest, chan, key):
+                return True
+        return False
+
+    def _search_dirs(self, chan):
+        ''' Return the ordered list of dirs in which we should look for FAQ
+        responses. *chan* is either a '#channel' or 'all' '''
+        # if chan is 'all', then the list will contain duplicate items, which
+        # should be fine for how this function is currently used. Just a little
+        # wasteful
+        return [
+            os.path.join(self._datadir(), chan),
+            os.path.join(self._datadir(), 'all'),
+            os.path.join(self._bundled_faq_dir(), chan),
+            os.path.join(self._bundled_faq_dir(), 'all'),
+        ]
+
+    def _list_keywords_in_chan(self, chan):
+        ''' Look up and return a list of all keywords we know about in *chan*,
+        which is either a '#channel' or 'all' '''
+        return {
+            # Convert 'a/b/c.txt' to 'c'
+            os.path.basename(os.path.splitext(f)[0])
+            # For each file in each search directory
+            for d in self._search_dirs(chan)
+            for f in glob.iglob(os.path.join(d, '*.txt'))
+        }
+
+    def _find_response(self, chan, key, is_pm):
+        ''' Find the appropriate response to keyword *key* in *chan* and return
+        it, or ``None`` if none is found.
+
+        - *chan*: ``#chan`` a moderated channel, ``all``, or ``None``.
+        - *key*: some keyword, or ``None``.
+        - *is_pm*: whether or not the FAQ command came as a PM. We want to
+        know, because we behave different in certain situations based on how we
+        got the message.
+
+        The return value is a single string, but it may have multiple lines. It
+        may or may not have a trailing \n; the caller must handle each case
+        gracefully.
+        '''
+        # Empty '!faq` request
+        if chan is None and key is None:
+            # if it was public, then there must be a channel
+            assert is_pm
+            return self._ondisk_response('all', 'about') or \
+                UNKNOWN_FAQ_RESP.format('all', 'about', tmb.code_url())
+        # Only receieved a keyword. This shouldn't happen?
+        elif chan is None:
+            assert key is not None
+            tmb.log(
+                'Asked to find response to {} without a channel. Should be '
+                'impossible. Pretending channel is all', key)
+            return self._ondisk_response('all', key) or \
+                UNKNOWN_FAQ_RESP.format('all', key, tmb.code_url())
+        # Only receieved chan or 'all'
+        elif key is None:
+            assert chan is not None
+            keys = list(self._list_keywords_in_chan(chan))
+            keys.sort()
+            if chan == 'all':
+                return 'Globally known FAQs: ' + ' '.join(keys)
+            return 'FAQs known in ' + chan + ': ' + ' '.join(keys)
+        # Both a chan (or 'all') and keyword
+        assert chan is not None
+        assert key is not None
+        return self._ondisk_response(chan, key) or \
+            UNKNOWN_FAQ_RESP.format(chan, key, tmb.code_url())
+
+    def _ondisk_response(self, chan, keyword):
+        ''' Find a response file that we have saved for channel ``chan`` that
+        is keyed with ``keyword``. If no such response can be found, return
+        ``None``, otherwise the response in its entirety. Note that the
+        response could be a multi-line string. '''
+        # List of dirs in which we might find the keyword file, ordered from
+        # most specific to least. This way, we stop as soon as we find a file.
+        possible_dirs = self._search_dirs(chan)
+        base = keyword + '.txt'
+        for d in possible_dirs:
+            fname = os.path.join(d, base)
+            if os.path.exists(fname) and not os.path.isdir(fname):
+                with open(fname, 'rt') as fd:
+                    s = ''
+                    for line in fd:
+                        line = line.strip()
+                        if not len(line) or line[0] == '#':
+                            continue
+                        s += line + '\n'
+                    return s
+        return None
 
 
 def _send_resp(dest, resp):
@@ -244,229 +423,3 @@ def _send_resp(dest, resp):
         if not len(line):
             continue
         notice(dest, line)
-
-
-def _record_resp(dest, chan, key):
-    '''
-    Record the fact that we are saying something in response to "!faq chan
-    key" (or similar, as both *chan* and *key* can be None) in *dest* right
-    now. *dest* can be a channel or a user's nick if sending them a PM.
-
-    Before recording that, however, first check if we even should send to
-    *dest* by spending a token from its token bucket. If the token bucket
-    indicates we are flooding, return False and do NOT record a response as
-    going out. Otherwise returrn True after recording the response going out.
-    '''
-    global RECENT_FAQS
-    global TB_FUNC
-    global TOKEN_BUCKETS
-    if dest not in TOKEN_BUCKETS:
-        TOKEN_BUCKETS[dest] = None
-    wait_time, TOKEN_BUCKETS[dest] = TB_FUNC(TOKEN_BUCKETS[dest])
-    if wait_time > 0:
-        tmb.log(
-            'Indicating we shouldn\'t respond to {}/{} because no more '
-            'tokens for {}', chan, key, dest)
-        return False
-    RECENT_FAQS.append((time.time(), dest, chan, key))
-    return True
-
-
-def _find_response(chan, key, is_pm):
-    ''' Find the appropriate response to keyword *key* in *chan* and return it,
-    or ``None`` if none is found.
-
-    - *chan*: ``#chan`` a moderated channel, ``all``, or ``None``.
-    - *key*: some keyword, or ``None``.
-    - *is_pm*: whether or not the FAQ command came as a PM. We want to know,
-    because we behave different in certain situations based on how we got the
-    message.
-
-    The return value is a single string, but it may have multiple lines. It may
-    or may not have a trailing \n; the caller must handle each case gracefully.
-    '''
-    # Empty '!faq` request
-    if chan is None and key is None:
-        # if it was public, then there must be a channel
-        assert is_pm
-        return _ondisk_response('all', 'about') or \
-            UNKNOWN_FAQ_RESP.format('all', 'about', tmb.code_url())
-    # Only receieved a keyword. This shouldn't happen?
-    elif chan is None:
-        assert key is not None
-        tmb.log(
-            'Asked to find response to {} without a channel. Should be '
-            'impossible. Pretending channel is all', key)
-        return _ondisk_response('all', key) or \
-            UNKNOWN_FAQ_RESP.format('all', key, tmb.code_url())
-    # Only receieved chan or 'all'
-    elif key is None:
-        assert chan is not None
-        keys = list(_list_keywords_in_chan(chan))
-        keys.sort()
-        if chan == 'all':
-            return 'Globally known FAQs: ' + ' '.join(keys)
-        return 'FAQs known in ' + chan + ': ' + ' '.join(keys)
-    # Both a chan (or 'all') and keyword
-    assert chan is not None
-    assert key is not None
-    return _ondisk_response(chan, key) or \
-        UNKNOWN_FAQ_RESP.format(chan, key, tmb.code_url())
-
-
-def _privmsg_pm_cb(user, receiver, message):
-    ''' PRIVMSG from :class:`tmb_util.userstr.UserStr` to us via PM.  '''
-    if receiver != tmb.my_nick():
-        return
-    words = message.lower().split()
-    if words[0] != '!faq':
-        return
-    if len(words) == 1 or len(words) > 3:
-        chan, key = None, None
-    elif len(words) == 2:
-        if words[1] == 'all' or words[1] in tmb.mod_chans():
-            chan, key = words[1], None
-        else:
-            chan, key = 'all', words[1]
-    else:
-        chan, key = words[1:]
-    resp = _find_response(chan, key, True)
-    if _faq_done_recently(user.nick, chan, key) or \
-            not _record_resp(user.nick, chan, key):
-        return
-    _send_resp(user.nick, resp)
-
-
-def _privmsg_modchan_cb(user, receiver, message):
-    if receiver not in tmb.mod_chans():
-        return
-    words = message.lower().split()
-    if words[0] != '!faq':
-        return
-    if len(words) == 1 or len(words) > 2:
-        chan, key = receiver, None
-    else:
-        chan, key = receiver, words[1]
-    resp = _find_response(chan, key, False)
-    if _faq_done_recently(receiver, chan, key) or \
-            not _record_resp(receiver, chan, key):
-        return
-    _send_resp(receiver, resp)
-
-
-def privmsg_cb(user, receiver, message):
-    ''' Main tormodbot code calls into this when we're enabled and the given
-    :class:`tmb_util.userstr.UserStr` has sent ``message`` (``str``) to
-    ``recevier`` (``str``). The receiver can be a channel ("#foo") or a nick
-    ("foo").
-    '''
-    global TOKEN_BUCKETS
-    global TB_FUNC
-    global RECENT_FAQS
-    if not len(message) or not message.lower().split()[0] == '!faq':
-        return
-    receiver = receiver.lower()
-    if receiver == tmb.my_nick():
-        return _privmsg_pm_cb(user, receiver, message)
-    return _privmsg_modchan_cb(user, receiver, message)
-
-
-def _ondisk_response(chan, keyword):
-    ''' Find a response file that we have saved for channel ``chan`` that is
-    keyed with ``keyword``. If no such response can be found, return ``None``,
-    otherwise the response in its entirety. Note that the response could be a
-    multi-line string. '''
-    # List of dirs in which we might find the keyword file, ordered from most
-    # specific to least. This way, we stop as soon as we find a file.
-    possible_dirs = _search_dirs(chan)
-    base = keyword + '.txt'
-    for d in possible_dirs:
-        fname = os.path.join(d, base)
-        if os.path.exists(fname) and not os.path.isdir(fname):
-            with open(fname, 'rt') as fd:
-                s = ''
-                for line in fd:
-                    line = line.strip()
-                    if not len(line) or line[0] == '#':
-                        continue
-                    s += line + '\n'
-                return s
-    return None
-
-
-def _conf_key(s):
-    ''' This modules config options are all prefixed with the module name and
-    an underscore. Prefix the given string with that.
-
-    >>> conf_key('enabled')
-    'faq_enabled'
-    '''
-    s = MOD_NAME + '_' + s
-    return s
-
-
-def _tb_size():
-    ''' How many tokens (FAQ responses) we may burst in a channel before we
-    must respect our self-imposed rate limit '''
-    return int(w.config_get_plugin(_conf_key('burst')))
-
-
-def _tb_rate():
-    ''' The amount of time, in seconds, that must pass before the we earn
-    another token '''
-    return float(w.config_get_plugin(_conf_key('rate'))) / 1000
-
-
-def _recent():
-    ''' The amount of time, in seconds, that must pass before we will say the
-    same FAQ response in the same channel again. '''
-    return int(w.config_get_plugin(_conf_key('recent')))
-
-
-def _unknown_resp():
-    ''' The response to give when there is no configured response '''
-    return w.config_get_plugin(_conf_key('unknown'))
-
-
-def _faq_done_recently(dest, chan, key):
-    ''' Returns True if we've given *chan's* *key* FAQ response in *dest*
-    recently, otherwise False.
-
-    Both chan and key can be None without it being an error.
-    '''
-    global RECENT_FAQS
-    # Cleanup of any FAQs not recent anymore
-    now = time.time()
-    while len(RECENT_FAQS) and RECENT_FAQS[0][0] + _recent() < now:
-        RECENT_FAQS.popleft()
-    # Check if the given FAQ was done recently
-    for ts, dest_i, chan_i, key_i in RECENT_FAQS:
-        if (dest_i, chan_i, key_i) == (dest, chan, key):
-            return True
-    return False
-
-
-def _search_dirs(chan):
-    ''' Return the ordered list of dirs in which we should look for FAQ
-    responses. *chan* is either a '#channel' or 'all' '''
-    # if chan is 'all', then the list will contain duplicate items, which
-    # should be fine for how this function is currently used. Just a little
-    # wasteful
-    return [
-        os.path.join(datadir(), chan),
-        os.path.join(datadir(), 'all'),
-        os.path.join(_bundled_faq_dir(), chan),
-        os.path.join(_bundled_faq_dir(), 'all'),
-    ]
-
-
-def _list_keywords_in_chan(chan):
-    ''' Look up and return a list of all keywords we know about in *chan*,
-    which is either a '#channel' or 'all' '''
-    return {
-        # Convert 'a/b/c.txt' to 'c'
-        os.path.basename(os.path.splitext(f)[0])
-        # For each file in each search directory
-        for d in _search_dirs(chan)
-        for f in glob.iglob(os.path.join(d, '*.txt'))
-    }

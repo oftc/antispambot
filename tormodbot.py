@@ -33,6 +33,9 @@ CONNECTED_TIMER_HOOK = None
 #: How long to wait, in seconds, before doing delayed on-connect actions
 CONNECTED_DELAY_SECS = 5
 
+#: All modules, even those that are disabled
+MODULES = []
+
 
 def log(s, *a, **kw):
     # log to core window
@@ -184,16 +187,20 @@ def join_cb(data, signal, signal_data):
     user, chan = UserStr(data['host']), data['channel']
     userlist.join_cb(user, chan)
     # Tell all da modules
-    if tmb_mod.autovoice.enabled():
-        tmb_mod.autovoice.join_cb(user, chan)
-    if tmb_mod.antiflood.enabled():
-        tmb_mod.antiflood.join_cb(user, chan)
-    if tmb_mod.badwords.enabled():
-        tmb_mod.badwords.join_cb(user, chan)
-    if tmb_mod.faq.enabled():
-        tmb_mod.faq.join_cb(user, chan)
-    if tmb_mod.hello.enabled():
-        tmb_mod.hello.join_cb(user, chan)
+    global MODULES
+    for mod in [m for m in MODULES if m.enabled()]:
+        if mod.enabled():
+            mod.join_cb(user, chan)
+    # if tmb_mod.autovoice.enabled():
+    #     tmb_mod.autovoice.join_cb(user, chan)
+    # if tmb_mod.antiflood.enabled():
+    #     tmb_mod.antiflood.join_cb(user, chan)
+    # if tmb_mod.badwords.enabled():
+    #     tmb_mod.badwords.join_cb(user, chan)
+    # if tmb_mod.faq.enabled():
+    #     tmb_mod.faq.join_cb(user, chan)
+    # if tmb_mod.hello.enabled():
+    #     tmb_mod.hello.join_cb(user, chan)
     return w.WEECHAT_RC_OK
 
 
@@ -208,11 +215,12 @@ def part_cb(data, signal, signal_data):
 
 
 def handle_command(user, where, message):
-    ''' UserStr *user* sent us str *message* that should be treated as a
-    command.  The caller verified this user has permission to command us and
-    that they sent us the message in a proper place. The str *where* indicates
-    the place where we we got it: either '#channel' if the cmd channel, or our
-    own nick. '''
+    ''' UserStr *user* sent us str *message* that maybe should be treated as a
+    command.  The caller DID verified this user has permission to command us
+    and that they sent us the message in a proper place. The caller does NOT
+    verify that the message is a valid command. The str *where* indicates the
+    place where we we got it: either '#channel' if the cmd channel, or our own
+    nick.  '''
     # If it came in as a PM: *where* is our own nick and any response should go
     # to the user's nick. If it came in via the command channel: any response
     # should go to the command channel
@@ -258,6 +266,8 @@ def handle_command(user, where, message):
         return chanserv.handle_command(user, where, message)
     elif words[0].lower() == 'help':
         return tmb_help.handle_command(user, where, message)
+    # This function should NOT assume that the given message contains a valid
+    # command.
     return w.WEECHAT_RC_OK
 
 
@@ -293,35 +303,29 @@ def privmsg_cb(data, signal, signal_data):
     if user.nick in ignores():
         # log('Ignore PRIVMSG from {} in {}', user.nick, dest)
         return w.WEECHAT_RC_OK
-    # If it's a PM, try handing it off to modules that want PRIVMSGes that are
-    # PMs. Do not return from this check, as PMs could be be from a master
-    # telling us to do something administratively
-    if dest == my_nick():
-        if tmb_mod.faq.enabled():
-            tmb_mod.faq.privmsg_cb(user, dest, message)
-    # If it is a PM to us or a message in our cmd channel, AND if the sender is
-    # one of our masters, handle it as a command
+    # Try handling the message as a command if it came from a master in a PM or
+    # in our command channel. A master's PM may not be a command, so it is
+    # wrong to return early here.
     if (dest == my_nick() or dest == cmd_chan()) and user.nick in masters():
-        return handle_command(user, dest, message)
-    ###########
-    # It wasn't a master-only command at this point, nor is it a PM that we
-    # care about
-    ###########
+        handle_command(user, dest, message)
     # If it came in on something other than a moderated channel (e.g. cmd_chan
     # or PM), ignore it
-    if dest not in mod_chans():
+    if dest not in mod_chans() + [my_nick(), cmd_chan()]:
         return w.WEECHAT_RC_OK
     # Tell our modules about this message
-    if tmb_mod.autovoice.enabled():
-        tmb_mod.autovoice.privmsg_cb(user, dest, message)
-    if tmb_mod.antiflood.enabled():
-        tmb_mod.antiflood.privmsg_cb(user, dest, message)
-    if tmb_mod.badwords.enabled():
-        tmb_mod.badwords.privmsg_cb(user, dest, message)
-    if tmb_mod.faq.enabled():
-        tmb_mod.faq.privmsg_cb(user, dest, message)
-    if tmb_mod.hello.enabled():
-        tmb_mod.hello.privmsg_cb(user, dest, message)
+    global MODULES
+    for mod in [m for m in MODULES if m.enabled()]:
+        mod.privmsg_cb(user, dest, message)
+    # if tmb_mod.autovoice.enabled():
+    #     tmb_mod.autovoice.privmsg_cb(user, dest, message)
+    # if tmb_mod.antiflood.enabled():
+    #     tmb_mod.antiflood.privmsg_cb(user, dest, message)
+    # if tmb_mod.badwords.enabled():
+    #     tmb_mod.badwords.privmsg_cb(user, dest, message)
+    # if tmb_mod.faq.enabled():
+    #     tmb_mod.faq.privmsg_cb(user, dest, message)
+    # if tmb_mod.hello.enabled():
+    #     tmb_mod.hello.privmsg_cb(user, dest, message)
     return w.WEECHAT_RC_OK
 
 
@@ -362,16 +366,20 @@ def notice_cb(data, signal, signal_data):
     # If not to us, just stop
     if receiver != my_nick():
         return w.WEECHAT_RC_OK
-    if tmb_mod.autovoice.enabled():
-        tmb_mod.autovoice.notice_cb(sender, receiver, message)
-    if tmb_mod.antiflood.enabled():
-        tmb_mod.antiflood.notice_cb(sender, receiver, message)
-    if tmb_mod.badwords.enabled():
-        tmb_mod.badwords.notice_cb(sender, receiver, message)
-    if tmb_mod.faq.enabled():
-        tmb_mod.faq.notice_cb(sender, receiver, message)
-    if tmb_mod.hello.enabled():
-        tmb_mod.hello.notice_cb(sender, receiver, message)
+    global MODULES
+    for mod in [m for m in MODULES if m.enabled()]:
+        if mod.enabled():
+            mod.notice_cb(sender, receiver, message)
+    # if tmb_mod.autovoice.enabled():
+    #     tmb_mod.autovoice.notice_cb(sender, receiver, message)
+    # if tmb_mod.antiflood.enabled():
+    #     tmb_mod.antiflood.notice_cb(sender, receiver, message)
+    # if tmb_mod.badwords.enabled():
+    #     tmb_mod.badwords.notice_cb(sender, receiver, message)
+    # if tmb_mod.faq.enabled():
+    #     tmb_mod.faq.notice_cb(sender, receiver, message)
+    # if tmb_mod.hello.enabled():
+    #     tmb_mod.hello.notice_cb(sender, receiver, message)
     return w.WEECHAT_RC_OK
 
 
@@ -431,10 +439,23 @@ if __name__ == '__main__':
 
     # (re)init systems
     cmd_q.initialize(int(CONF['msg_burst']), float(CONF['msg_rate'])/1000)
-    tmb_mod.faq.initialize()
-    tmb_mod.hello.initialize()
+    # tmb_mod.faq.initialize()
+    # tmb_mod.hello.initialize()
     chanserv.initialize()
     userlist.initialize()
+
+    # create modules
+    if not len(MODULES):
+        MODULES = [
+            tmb_mod.antiflood.AntiFloodModule(),
+            tmb_mod.autovoice.AutoVoiceModule(),
+            tmb_mod.badwords.BadWordsModule(),
+            tmb_mod.faq.FAQModule(),
+            tmb_mod.hello.HelloModule(),
+        ]
+
+    for mod in [m for m in MODULES if m.enabled()]:
+        mod.initialize()
 
     w.hook_signal('irc_server_connected', 'connected_cb', '')
     w.hook_signal('irc_server_disconnected', 'connected_cb', '')

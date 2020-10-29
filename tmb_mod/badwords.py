@@ -16,10 +16,7 @@ import tormodbot as tmb
 # other modules/packages
 from tmb_util import chanserv
 from tmb_util.lcsv import lcsv
-
-#: The name of this module (wow such good comment)
-MOD_NAME = 'badwords'
-
+from . import Module
 
 # To make calling weechat stuff take fewer characters
 w = weechat
@@ -31,73 +28,48 @@ class Action(enum.Enum):
     quiet_nick = 'quiet_nick'
 
 
-def enabled():
-    ''' Main tormodbot code calls this to see if this module is enabled '''
-    a = w.config_string_to_boolean(w.config_get_plugin(_conf_key('enabled')))
-    return a
+class BadWordsModule(Module):
+    ''' See the module-level documentation '''
+    NAME = 'badwords'
 
-
-def notice_cb(sender, receiver, message):
-    ''' Main tormodbot code calls into this when we're enabled and have
-    received a notice message '''
-    pass
-
-
-def join_cb(user, chan):
-    ''' Main tormodbot code calls into this when we're enabled and the given
-    :class:`tmb_util.userstr.UserStr` has joined the given channel '''
-    pass
-
-
-def privmsg_cb(user, receiver, message):
-    ''' Main tormodbot code calls into this when we're enabled and the given
-    :class:`tmb_util.userstr.UserStr` has sent ``message`` (``str``) to
-    ``recevier`` (``str``). The receiver can be a channel ("#foo") or a nick
-    ("foo").
-    '''
-    # The first two are sanity checks: that the receiver is a non-empty string
-    # and that it looks like a channel name.
-    # The third check is that it is one of our moderated channels. We only care
-    # about those.
-    receiver = receiver.lower()
-    if not len(receiver) or \
-            receiver[0] != '#' or \
-            receiver not in tmb.mod_chans():
-        return
-    bad_words = lcsv(w.config_get_plugin(_conf_key('badwords')))
-    # Make message lower case for case-insensitive matching
-    message = message.lower()
-    # Check to see if any of the bad words are in the message
-    for bad_word in bad_words:
-        # Make every bad word lower case for case-insensitive matching
-        bad_word = bad_word.lower()
-        if bad_word in message:
-            tmb.log(
-                '{} said bad word "{}" in {}', user.nick, bad_word, receiver)
-            for a in _actions():
-                {
-                    'quiet_nick': _action_quiet_nick,
-                }[a.name](user, receiver)
+    def privmsg_cb(self, user, receiver, message):
+        ''' Main tormodbot code calls into this when we're enabled and the
+        given :class:`tmb_util.userstr.UserStr` has sent ``message`` (``str``)
+        to ``recevier`` (``str``). The receiver can be a channel ("#foo") or a
+        nick ("foo").  '''
+        # The first two are sanity checks: that the receiver is a non-empty
+        # string and that it looks like a channel name.
+        # The third check is that it is one of our moderated channels. We only
+        # care about those.
+        receiver = receiver.lower()
+        if not len(receiver) or \
+                receiver[0] != '#' or \
+                receiver not in tmb.mod_chans():
             return
+        bad_words = lcsv(w.config_get_plugin(self._conf_key('badwords')))
+        # Make message lower case for case-insensitive matching
+        message = message.lower()
+        # Check to see if any of the bad words are in the message
+        for bad_word in bad_words:
+            # Make every bad word lower case for case-insensitive matching
+            bad_word = bad_word.lower()
+            if bad_word in message:
+                tmb.log(
+                    '{} said bad word "{}" in {}', user.nick, bad_word,
+                    receiver)
+                for a in self._actions():
+                    {
+                        'quiet_nick': _action_quiet_nick,
+                    }[a.name](user, receiver)
+                return
+
+    def _actions(self):
+        ''' The list of Actions we will take when we detect a bad word '''
+        return [Action(s) for s in
+                lcsv(w.config_get_plugin(self._conf_key('actions')))]
 
 
 def _action_quiet_nick(user, chan):
     ''' Tell chanserv to quiet the UserStr user's host on channel chan '''
     chanserv.internal_handle_command(
         user.nick, [chan], ['nick'], 'badword', is_quiet=True)
-
-
-def _actions():
-    ''' The list of Actions we will take when we detect a bad word '''
-    return [Action(s) for s in lcsv(w.config_get_plugin(_conf_key('actions')))]
-
-
-def _conf_key(s):
-    ''' This modules config options are all prefixed with the module name and
-    an underscore. Prefix the given string with that.
-
-    >>> conf_key('enabled')
-    'antiflood_enabled'
-    '''
-    s = MOD_NAME + '_' + s
-    return s
