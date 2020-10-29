@@ -133,6 +133,13 @@ FAQ_RATE = '5000'
 #: the same channel.
 FAQ_RECENT = '120'
 
+# ### botabuse.py configuration options ###
+#: Whether to enable the :mod:`tmb_mod.botabuse` module
+BOTABUSE_ENABLED = 'on'
+#: Nicks belonging to bots that might spam and that we want to temporarily
+#: mute if they do
+BOTABUSE_BOTS = ''
+
 conf = {
     'serv': SERV,
     'log_chan': LOG_CHAN,
@@ -156,6 +163,8 @@ conf = {
     'badwords_enabled': BADWORDS_ENABLED,
     'badwords_badwords': BADWORDS_BADWORDS,
     'badwords_actions': BADWORDS_ACTIONS,
+    'botabuse_enabled': BOTABUSE_ENABLED,
+    'botabuse_bots': BOTABUSE_BOTS,
     'hello_enabled': HELLO_ENABLED,
     'hello_msg_max_len': HELLO_MSG_MAX_LEN,
     'hello_hello_words': HELLO_HELLO_WORDS,

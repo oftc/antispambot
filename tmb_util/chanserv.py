@@ -43,9 +43,12 @@ SELECT rowid, * FROM bans WHERE expire < ? AND deleted = 0;
 '''
 #: Weechat timer hook on our reoccuriring event for deleting old bans
 DELETE_BAN_TIMER_HOOK = None
-#: Interval, in seconds, with which we check for old bans that we should delete
-# DELETE_BAN_INTERVAL = 10  # for debugging purposes
-DELETE_BAN_INTERVAL = 60 * 60
+#: Interval, in seconds, with which we check for old bans that we should
+#: delete. Ideally we wouldn't poll, but if we must, then ideally we wouldn't
+#: poll so often. It has been lowered from hourly to this because the
+#: botabuse module issues very short mutes through us.
+DELETE_BAN_INTERVAL = 10
+# DELETE_BAN_INTERVAL = 60 * 60
 
 
 def db_fname():
@@ -108,7 +111,7 @@ def _parser():
     # If given, ignore --duration and make the ban permanent
     p.add_argument('-p', '--permanent', action='store_true')
     # Duration, in days, of a temporary ban
-    p.add_argument('-d', '--duration', type=int, default=TEMP_BAN_DAYS)
+    p.add_argument('-d', '--duration', type=float, default=TEMP_BAN_DAYS)
     return p
 
 
@@ -150,6 +153,7 @@ def _handle_command(master_nick, args):
         expire = PERMANENT_TS
     else:
         expire = now + args.duration * SECS_IN_DAY
+    expire = int(expire)
     # Now act on all the valid patterns that are left
     db_conn = sqlite3.connect(db_fname())
     with db_conn:
@@ -213,7 +217,7 @@ def internal_handle_command(
         pats_csv=lcsv(pats),
         r=reason,
         perm='--permanent' if is_permanent else '',
-        dur='--duration %d' % (duration,) if not is_permanent else '')
+        dur='--duration %.9f' % (duration,) if not is_permanent else '')
     args = _try_parse(_parser(), s)
     if not args:
         # error should already be logged

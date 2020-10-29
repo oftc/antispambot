@@ -7,6 +7,7 @@ from config import conf as CONF
 import tmb_mod.autovoice
 import tmb_mod.antiflood
 import tmb_mod.badwords
+import tmb_mod.botabuse
 import tmb_mod.faq
 import tmb_mod.hello
 # other modules/packages
@@ -450,6 +451,7 @@ if __name__ == '__main__':
             tmb_mod.antiflood.AntiFloodModule(),
             tmb_mod.autovoice.AutoVoiceModule(),
             tmb_mod.badwords.BadWordsModule(),
+            tmb_mod.botabuse.BotAbuseModule(),
             tmb_mod.faq.FAQModule(),
             tmb_mod.hello.HelloModule(),
         ]
