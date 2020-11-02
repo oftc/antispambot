@@ -192,16 +192,6 @@ def join_cb(data, signal, signal_data):
     for mod in [m for m in MODULES if m.enabled()]:
         if mod.enabled():
             mod.join_cb(user, chan)
-    # if tmb_mod.autovoice.enabled():
-    #     tmb_mod.autovoice.join_cb(user, chan)
-    # if tmb_mod.antiflood.enabled():
-    #     tmb_mod.antiflood.join_cb(user, chan)
-    # if tmb_mod.badwords.enabled():
-    #     tmb_mod.badwords.join_cb(user, chan)
-    # if tmb_mod.faq.enabled():
-    #     tmb_mod.faq.join_cb(user, chan)
-    # if tmb_mod.hello.enabled():
-    #     tmb_mod.hello.join_cb(user, chan)
     return w.WEECHAT_RC_OK
 
 
@@ -317,16 +307,6 @@ def privmsg_cb(data, signal, signal_data):
     global MODULES
     for mod in [m for m in MODULES if m.enabled()]:
         mod.privmsg_cb(user, dest, message)
-    # if tmb_mod.autovoice.enabled():
-    #     tmb_mod.autovoice.privmsg_cb(user, dest, message)
-    # if tmb_mod.antiflood.enabled():
-    #     tmb_mod.antiflood.privmsg_cb(user, dest, message)
-    # if tmb_mod.badwords.enabled():
-    #     tmb_mod.badwords.privmsg_cb(user, dest, message)
-    # if tmb_mod.faq.enabled():
-    #     tmb_mod.faq.privmsg_cb(user, dest, message)
-    # if tmb_mod.hello.enabled():
-    #     tmb_mod.hello.privmsg_cb(user, dest, message)
     return w.WEECHAT_RC_OK
 
 
@@ -371,16 +351,6 @@ def notice_cb(data, signal, signal_data):
     for mod in [m for m in MODULES if m.enabled()]:
         if mod.enabled():
             mod.notice_cb(sender, receiver, message)
-    # if tmb_mod.autovoice.enabled():
-    #     tmb_mod.autovoice.notice_cb(sender, receiver, message)
-    # if tmb_mod.antiflood.enabled():
-    #     tmb_mod.antiflood.notice_cb(sender, receiver, message)
-    # if tmb_mod.badwords.enabled():
-    #     tmb_mod.badwords.notice_cb(sender, receiver, message)
-    # if tmb_mod.faq.enabled():
-    #     tmb_mod.faq.notice_cb(sender, receiver, message)
-    # if tmb_mod.hello.enabled():
-    #     tmb_mod.hello.notice_cb(sender, receiver, message)
     return w.WEECHAT_RC_OK
 
 
