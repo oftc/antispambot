@@ -344,9 +344,6 @@ def notice_cb(data, signal, signal_data):
     if '!' in sender and sender[:sender.index('!')].lower() in ignores():
         log('Ignore NOTICE from {}', sender)
         return w.WEECHAT_RC_OK
-    # If not to us, just stop
-    if receiver != my_nick():
-        return w.WEECHAT_RC_OK
     global MODULES
     for mod in [m for m in MODULES if m.enabled()]:
         if mod.enabled():
