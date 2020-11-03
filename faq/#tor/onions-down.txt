@@ -14,5 +14,4 @@ good search engine that indexes onion services. Maybe try http://ahmia.fi.
 If you've never made a search engine before, please don't try to make one for
 onion services. It won't be any better than anything that already exists.
 Instead, maybe run a relay or fix a bug or host your blog as an onion service.
-Get involved and be an advocate for Tor!
-https://community.torproject.org/relay/
+Get involved and be an advocate for Tor!  https://community.torproject.org
