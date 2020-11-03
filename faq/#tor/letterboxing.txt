@@ -1,0 +1,11 @@
+https://support.torproject.org/tbb/maximized-torbrowser-window The gray
+bars in Tor Browser when you resize/maximize it make you safer, not perfectly
+safe. When browsing example.com with a window size of 1111x888 without
+letterboxing, you are most likely the only one, thus unique. But when browsing
+example.com with letterboxing, your window will appear to be 1100x800, which
+**maybe** some other TB user visiting example.com will have too.
+Assuming most people do not resize TB's window, for best anti-fingerprinting
+results, leave TB's window size alone. Window size can be determined with CSS;
+disabling JavaScript doesn't help: https://matt.traudt.xyz/p/YF4ciVY6.html.
+No, having a common monitor size doesn't help: ask me about the FAQ
+fullscreen-torbrowser.

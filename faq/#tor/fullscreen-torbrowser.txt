@@ -1,0 +1,20 @@
+Maximizing Tor Browser or making it fullscreen doesn't make your window size
+more common like you might think.  The following numbers are made up, but
+illustrate why. On a 1920x1080 monitor:
+
+Windows 10 users will have 10 fewer vertical pixels because of the start
+menu bar thing;
+Win 7 has 9 fewer vertical;
+MacOS has 5 fewer because of the menu bar thing at the top;
+Ubuntu has 10 fewer horizontal because of its dock thing;
+Mint has 6 fewer vertical;
+Debian Gnome has 12 fewer vertical;
+Debian KDE has something different;
+Debian LXDE has something different;
+i3 or i3-gaps has something different and unique to them;
+Anyone that literally full screens their browser with no URL bar, toolbars, or
+visible tabs has exactly 1920x1080;
+Someone that wants the URL bar and tabs visible while the browser is full
+screen will have something different ...
+
+The fact you have a common monitor size ends up not really helping at all.
