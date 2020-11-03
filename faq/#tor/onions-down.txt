@@ -1,0 +1,18 @@
+Most onion sites are run by amateurs and are thus going down
+temporarily/permanently all the time. This can be seemingly exacerbated by
+indexes not removing links that have been down for a significant length of
+time. If you can access "big" onion services such as Facebook's
+(https://facebookcorewwwi.onion) or DuckDuckGo's
+(http://3g2upl4pq6kufc4m.onion/), then you're very likely trying to access
+onion services that are down. There's probably nothing wrong with your
+configuration.
+
+An index of actually good onion services:
+https://github.com/alecmuffett/real-world-onion-sites.  There's not really a
+good search engine that indexes onion services. Maybe try http://ahmia.fi.
+
+If you've never made a search engine before, please don't try to make one for
+onion services. It won't be any better than anything that already exists.
+Instead, maybe run a relay or fix a bug or host your blog as an onion service.
+Get involved and be an advocate for Tor!
+https://community.torproject.org/relay/
