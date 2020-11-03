@@ -8,4 +8,5 @@ Assuming most people do not resize TB's window, for best anti-fingerprinting
 results, leave TB's window size alone. Window size can be determined with CSS;
 disabling JavaScript doesn't help: https://matt.traudt.xyz/p/YF4ciVY6.html.
 No, having a common monitor size doesn't help: ask me about the FAQ
-fullscreen-torbrowser.
+fullscreen-torbrowser. Letterboxing can be disabled with the about:config
+option privacy.resistFingerprinting.letterboxing.
