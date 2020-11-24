@@ -1,0 +1,10 @@
+Tunnelling Tor over Tor (TOT) is not only wasteful of network resources, it is
+actively bad for your security. DO NOT DO IT. Doing TOT you might choose two
+relays in the same /16 (i.e. in the same datacenter), thus making it easier for
+an attacker to deanonymize your traffic. Doing TOT you may choose two or more
+relays in the same MyFamily (i.e. operated by the same person), thus making it
+easier to deanonymize you. Finally, doing TOT means your path over the Internet
+is much longer, making it more likely that network-level adversaries can see
+your traffic and successfully deanonymize you.
+
+Also try !faq more-hops

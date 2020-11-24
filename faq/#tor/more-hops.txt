@@ -1,0 +1,7 @@
+More hops does not make you more secure. Security researchers believe it is
+much easier for attackers to monitor your traffic near your first "hop" and
+near your last "hop" (whether they are Tor relays, VPNs, proxies, or some
+mixture of things) than it is for them to go backtracking "hop by hop". It
+doesn't matter how many hops or how many technologies are in the middle.
+
+See also: https://support.torproject.org/misc/misc-11/. Also try !faq tor-over-tor
