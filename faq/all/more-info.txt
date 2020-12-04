@@ -1,0 +1,11 @@
+We need more information in order to help you. Please tell us: what operating
+system you're using, whether you're using Tor or Tor Browser, how you obtained
+Tor (Browser), what version Tor (Browser) is.
+
+You may be asked to share Tor (Browser) logs or your torrc configuration file.
+When sharing more than 3 lines, please upload to https://paste.debian.net and
+share the link. Please don't censor logs; if you do, tell us that you have.
+
+You may be asked if your time is correct. If so, share the output of 'date -u'
+in a terminal (Linux, macOS) or '[System.DateTime]::UtcNow' in powershell
+(Windows). Don't include the ' quotes.
