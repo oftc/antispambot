@@ -407,8 +407,11 @@ class FAQModule(Module):
                     s = ''
                     for line in fd:
                         line = line.strip()
-                        if not len(line) or line[0] == '#':
+                        if len(line) and line[0] == '#':
                             continue
+                        # either line is '', which is fine and we do indeed
+                        # want to add a newline, or it's not '' but it
+                        # definitely is NOT a comment.
                         s += line + '\n'
                     return s
         return None
