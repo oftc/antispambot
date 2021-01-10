@@ -1,0 +1,33 @@
+# Most onion sites are run by amateurs and are thus going down
+# temporarily/permanently all the time. This can be seemingly exacerbated by
+# indexes not removing links that have been down for a significant length of
+# time. If you can access "big" onion services such as Facebook's
+# (https://facebookcorewwwi.onion) or DuckDuckGo's
+# (http://3g2upl4pq6kufc4m.onion/), then you're very likely trying to access
+# onion services that are down. There's probably nothing wrong with your
+# configuration.
+# 
+# An index of actually good onion services:
+# https://github.com/alecmuffett/real-world-onion-sites.  There's not really a
+# good search engine that indexes onion services. Maybe try http://ahmia.fi.
+# 
+# If you've never made a search engine before, please don't try to make one for
+# onion services. It won't be any better than anything that already exists.
+# Instead, maybe run a relay or fix a bug or host your blog as an onion service.
+# Get involved and be an advocate for Tor!  https://community.torproject.org
+# 
+
+[10 Jan 2021] Yes most/all v3 onion services are down for most people. The most
+likely explanation for this is the dirauths being overloaded with traffic such
+that they cannot generate a consensus reliably, and the behavior of v3 onion
+services in the presence of flaky consensus information is buggy in ways that v2
+onions aren't.
+
+It is unknown if the traffic hitting the diratuhs is maliciously motivated.
+It is not confirmed that the people sending lots of traffic to dirauths are
+trying to hurt v3 onions.
+
+The issue is being worked on.
+
+If you have better factual information that should be added to this FAQ, tell
+pastly.
