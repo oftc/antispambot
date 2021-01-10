@@ -20,12 +20,17 @@
 [10 Jan 2021] Yes most/all v3 onion services are down for most people. The most
 likely explanation for this is the dirauths being overloaded with traffic such
 that they cannot generate a consensus reliably, and the behavior of v3 onion
-services in the presence of flaky consensus information is buggy in ways that v2
-onions aren't.
+services in the presence of flaky consensus information (both client and server
+side) is buggy in ways that v2 onions aren't.
 
-It is unknown if the traffic hitting the diratuhs is maliciously motivated.
-It is not confirmed that the people sending lots of traffic to dirauths are
-trying to hurt v3 onions.
+The deluge of traffic hitting dirauths has been happening since 6 Jan 2021
+(https://lists.torproject.org/pipermail/tor-relays/2021-January/019201.html)
+and is suspected to be similar to this situation last year
+(https://gitlab.torproject.org/tpo/core/tor/-/issues/33018).
+
+It is unknown if the traffic hitting the dirauths is maliciously motivated.
+There is no evidence that the traffic overload is actively trying to hurt v3
+onions.
 
 The issue is being worked on.
 
