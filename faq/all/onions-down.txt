@@ -22,6 +22,7 @@ likely explanation for this is the dirauths being overloaded with traffic such
 that they cannot generate a consensus reliably, and the behavior of v3 onion
 services in the presence of flaky consensus information (both client and server
 side) is buggy in ways that v2 onions aren't.
+(https://gitlab.torproject.org/tpo/core/tor/-/issues/40237)
 
 The deluge of traffic hitting dirauths has been happening since 6 Jan 2021
 (https://lists.torproject.org/pipermail/tor-relays/2021-January/019201.html)
