@@ -17,34 +17,22 @@
 # Get involved and be an advocate for Tor!  https://community.torproject.org
 # 
 
-[11 Jan 2021] V3 onion services seem to be reachable again. The authorities can
-communicate well enough to generate consensuses.
+[11 Jan 2021] V3 onion service connectivity is flaky right now for everyone.
 
-The issue is being worked on.
-
-More info/link dump: https://consensus-health.torproject.org/
+The dirauths are being overloaded with traffic such that they cannot generate a
+consensus reliably, and the behavior of v3 onion services in the presence of
+flaky consensus information (both client and server side) is buggy in ways that
+v2 onions and most other parts of Tor aren't.
 https://gitlab.torproject.org/tpo/core/tor/-/issues/40237
-https://lists.torproject.org/pipermail/tor-relays/2021-January/019201.html
 
-Info as of yesterday: https://p.pastly.xyz/file/zn75n2/zn7x5w/plain
+It is unknown if the traffic hitting the dirauths is maliciously motivated.
+There is NO evidence that the traffic overload is actively trying to hurt v3
+onions.
 
-# [10 Jan 2021] Yes most/all v3 onion services are down for most people. The most
-# likely explanation for this is the dirauths being overloaded with traffic such
-# that they cannot generate a consensus reliably, and the behavior of v3 onion
-# services in the presence of flaky consensus information (both client and server
-# side) is buggy in ways that v2 onions aren't.
-# (https://gitlab.torproject.org/tpo/core/tor/-/issues/40237)
-# 
-# The deluge of traffic hitting dirauths has been happening since 6 Jan 2021
-# (https://lists.torproject.org/pipermail/tor-relays/2021-January/019201.html)
-# and is suspected to be similar to this situation last year
-# (https://gitlab.torproject.org/tpo/core/tor/-/issues/33018).
-# 
-# It is unknown if the traffic hitting the dirauths is maliciously motivated.
-# There is no evidence that the traffic overload is actively trying to hurt v3
-# onions.
-# 
-# The issue is being worked on.
-# 
-# If you have better factual information that should be added to this FAQ, tell
-# pastly.
+The deluge of traffic hitting dirauths has been happening since 6 Jan 2021
+(https://lists.torproject.org/pipermail/tor-relays/2021-January/019201.html)
+and is suspected to be similar to this situation last year
+(https://gitlab.torproject.org/tpo/core/tor/-/issues/33018).
+
+The issue is being worked on. THE fix is likely already known, and is being
+tested by devs before getting merged and backported.
