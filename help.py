@@ -20,12 +20,14 @@ KNOWN_CMDS = [
     'reconnect', 'ping', 'mode', 'info',
     'akick', 'ban',
     'quiet', 'mute',
+    'kick',
 ]
 KNOWN_CMDS.sort()
 #: Main help function calls into these to get help on specific commands
 TOP_LVL_CMDS = {
     'akick': lambda s: _help_akickquiet(s, 'akick'),
     'ban': lambda s: _help_akickquiet(s, 'akick'),
+    'kick': lambda s: _help_kick(s),
     'info': lambda s: _help_info(s),
     'mode': lambda s: _help_mode(s),
     'mute': lambda s: _help_akickquiet(s, 'quiet'),
@@ -81,6 +83,15 @@ This results in {me} issuing three chanserv commands:
         which=which,
         me=tmb.my_nick(),
         temp_d=TEMP_BAN_DAYS)
+
+
+def _help_kick(cmd_msg):
+    ''' Help string for 'help kick' command '''
+    return '''Kick a user from some channel, optional reason.
+Ex: "kick #foo crazycake being really annoying" kicks crazycake from #tor with the provided reason.
+Ex: "kick #bar jeff" kicks jeff from #bar (reason will be set to "jeff").
+Note that kicking someone, by itself, doesn't stop them from rejoining.
+'''
 
 
 def _help_info(cmd_msg):

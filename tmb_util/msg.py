@@ -16,6 +16,13 @@ Provide it with:
 - the mode flags (e.g. '+R-M') all as one string
 - any number of args for the flags
 
+We provide kick(...) so you can kick someone from some channel. Provide it
+with:
+
+- the channel
+- the nick
+- a reason
+
 Examples:
     mode('#tor', '-R')
     mode('#tor', '+o-o', 'pastly', 'arma')
@@ -52,6 +59,16 @@ def mode(what, flags, *a):
     contain values for flags. For example, +o needs a nick to receive op
     status. '''
     s = '/mode {} {} {}'.format(what, flags, ' '.join(a))
+    s = s.strip()
+    return _send(s)
+
+
+def kick(chan, nick, reason):
+    ''' KICK the given nick from chan with some reason. The reason can be an
+    empty string, in which case it is set to the nick. '''
+    if not reason:
+        reason = nick
+    s = '/kick {} {} {}'.format(chan, nick, reason)
     s = s.strip()
     return _send(s)
 

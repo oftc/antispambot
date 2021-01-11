@@ -15,7 +15,7 @@ import tmb_util.cmdqueue as cmd_q
 import help as tmb_help
 from tmb_util import chanserv
 from tmb_util import userlist
-from tmb_util.msg import notice, msg, join, mode, reconnect
+from tmb_util.msg import notice, msg, join, mode, reconnect, kick
 from tmb_util.lcsv import lcsv
 from tmb_util.userstr import UserStr
 
@@ -255,6 +255,18 @@ def handle_command(user, where, message):
         return w.WEECHAT_RC_OK
     elif words[0].lower() in ['quiet', 'akick']:
         return chanserv.handle_command(user, where, message)
+    elif words[0].lower() in ['kick']:
+        if len(words) < 3:
+            log('Invalid kick command (kick $chan $nick $reason)')
+            return w.WEECHAT_RC_OK
+        chan = words[1].lower()
+        nick = words[2]
+        reason = ' '.join(words[3:])
+        if chan not in mod_chans():
+            log('{} is not a mod_chan, so will not kick', chan)
+            return w.WEECHAT_RC_OK
+        kick(chan, nick, reason)
+        return w.WEECHAT_RC_OK
     elif words[0].lower() == 'help':
         return tmb_help.handle_command(user, where, message)
     # This function should NOT assume that the given message contains a valid
