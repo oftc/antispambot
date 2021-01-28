@@ -17,8 +17,8 @@
 # Get involved and be an advocate for Tor!  https://community.torproject.org
 # 
 
-[13 Jan 2021] V3 onion services are experiencing periods of flaky connectivity
-right now for everyone. The last period was on the 11th.
+[27 Jan 2021] V3 onion services are again experiencing periods of flaky
+connectivity.
 
 What is causing the issue, the fix, ticket numbers, FAQs, etc. are contained in the
 following link.
