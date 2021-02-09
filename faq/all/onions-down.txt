@@ -1,46 +1,20 @@
-# Most onion sites are run by amateurs and are thus going down
-# temporarily/permanently all the time. This can be seemingly exacerbated by
-# indexes not removing links that have been down for a significant length of
-# time. If you can access "big" onion services such as Facebook's
-# (https://facebookcorewwwi.onion) or DuckDuckGo's
-# (http://3g2upl4pq6kufc4m.onion/), then you're very likely trying to access
-# onion services that are down. There's probably nothing wrong with your
-# configuration.
-# 
-# An index of actually good onion services:
-# https://github.com/alecmuffett/real-world-onion-sites.  There's not really a
-# good search engine that indexes onion services. Maybe try http://ahmia.fi.
-# 
-# If you've never made a search engine before, please don't try to make one for
-# onion services. It won't be any better than anything that already exists.
-# Instead, maybe run a relay or fix a bug or host your blog as an onion service.
-# Get involved and be an advocate for Tor!  https://community.torproject.org
-# 
+Most onion sites are run by amateurs and are thus going down
+temporarily/permanently all the time. This can be seemingly exacerbated by
+indexes not removing links that have been down for a significant length of
+time. If you can access "big" onion services such as Facebook's
+(https://facebookcorewwwi.onion) or DuckDuckGo's
+(http://3g2upl4pq6kufc4m.onion/), then you're very likely trying to access
+onion services that are down. There's probably nothing wrong with your
+configuration.
 
-[27 Jan 2021] V3 onion services are again experiencing periods of flaky
-connectivity.
-
-What is causing the issue, the fix, ticket numbers, FAQs, etc. are contained in the
-following link.
-
+V3 onion services were flaky in January 2021. For why
 https://matt.traudt.xyz/posts/tracking-tors-network-wide-v3-onion-service-outages/
 
-# [11 Jan 2021] V3 onion service connectivity is flaky right now for everyone.
-# 
-# The dirauths are being overloaded with traffic such that they cannot generate a
-# consensus reliably, and the behavior of v3 onion services in the presence of
-# flaky consensus information (both client and server side) is buggy in ways that
-# v2 onions and most other parts of Tor aren't.
-# https://gitlab.torproject.org/tpo/core/tor/-/issues/40237
-# 
-# It is unknown if the traffic hitting the dirauths is maliciously motivated.
-# There is NO evidence that the traffic overload is actively trying to hurt v3
-# onions.
-# 
-# The deluge of traffic hitting dirauths has been happening since 6 Jan 2021
-# (https://lists.torproject.org/pipermail/tor-relays/2021-January/019201.html)
-# and is suspected to be similar to this situation last year
-# (https://gitlab.torproject.org/tpo/core/tor/-/issues/33018).
-# 
-# The issue is being worked on. THE fix is likely already known, and is being
-# tested by devs before getting merged and backported.
+An index of actually good onion services:
+https://github.com/alecmuffett/real-world-onion-sites.  There's not really a
+good search engine that indexes onion services. Maybe try http://ahmia.fi.
+
+If you've never made a search engine before, please don't try to make one for
+onion services. It won't be any better than anything that already exists.
+Instead, maybe run a relay or fix a bug or host your blog as an onion service.
+Get involved and be an advocate for Tor!  https://community.torproject.org
