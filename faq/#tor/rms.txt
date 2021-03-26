@@ -2,7 +2,6 @@ Here are Tor Project's public statements on the matter of RMS rejoining the
 FSF: https://rms-open-letter.github.io
 https://twitter.com/torproject/status/1374754836009345024
 
-Do not expect anyone to engage in a discussion about this in this channel as it
-is a hot, politically-charged topic. Three arguments a day get old fast,
-convince nobody of anything, and distract us from the purpose of this channel:
-to provide support to people using Tor software.
+Please do not engage in discussion about this in this channel. It is an
+extremely politically charged topic that distracts from the purpose of this
+channel: to provide support to people using Tor software.
