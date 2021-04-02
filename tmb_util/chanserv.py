@@ -46,7 +46,8 @@ DELETE_BAN_TIMER_HOOK = None
 #: Interval, in seconds, with which we check for old bans that we should
 #: delete. Ideally we wouldn't poll, but if we must, then ideally we wouldn't
 #: poll so often. It has been lowered from hourly to this because the
-#: botabuse module issues very short mutes through us.
+#: botabuse module issues very short mutes through us. Also now the joinspam
+#: module issues bans >1h but <1d.
 DELETE_BAN_INTERVAL = 10
 # DELETE_BAN_INTERVAL = 60 * 60
 

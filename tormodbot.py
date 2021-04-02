@@ -10,6 +10,7 @@ import tmb_mod.badwords
 import tmb_mod.botabuse
 import tmb_mod.faq
 import tmb_mod.hello
+import tmb_mod.joinspam
 # other modules/packages
 import tmb_util.cmdqueue as cmd_q
 import help as tmb_help
@@ -433,6 +434,7 @@ if __name__ == '__main__':
             tmb_mod.botabuse.BotAbuseModule(),
             tmb_mod.faq.FAQModule(),
             tmb_mod.hello.HelloModule(),
+            tmb_mod.joinspam.JoinSpamModule(),
         ]
 
     for mod in [m for m in MODULES if m.enabled()]:

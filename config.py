@@ -140,6 +140,15 @@ BOTABUSE_ENABLED = 'on'
 #: mute if they do
 BOTABUSE_BOTS = ''
 
+# ### joinspam.py configuration options ###
+#: Whether to enable the :mod:`tmb_mod.joinspam` module
+JOINSPAM_ENABLED = 'on'
+#: Joining the same channel this many times in RECENT_MINS time means you're
+#: spamming.
+JOINSPAM_MAX_JOINS = '6'
+#: Time period to consider when counting joins.
+JOINSPAM_RECENT_MINS = '30'
+
 conf = {
     'serv': SERV,
     'log_chan': LOG_CHAN,
@@ -176,4 +185,7 @@ conf = {
     'faq_burst': FAQ_BURST,
     'faq_rate': FAQ_RATE,
     'faq_recent': FAQ_RECENT,
+    'joinspam_enabled': JOINSPAM_ENABLED,
+    'joinspam_max_joins': JOINSPAM_MAX_JOINS,
+    'joinspam_recent_mins': JOINSPAM_RECENT_MINS,
 }
