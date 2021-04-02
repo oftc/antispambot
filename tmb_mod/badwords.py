@@ -16,6 +16,7 @@ import tormodbot as tmb
 # other modules/packages
 from tmb_util import chanserv
 from tmb_util.lcsv import lcsv
+from tmb_util.msg import mode
 from . import Module
 
 # To make calling weechat stuff take fewer characters
@@ -26,6 +27,8 @@ class Action(enum.Enum):
     ''' Actions we can take when a user says a bad word.  '''
     #: tell chanserv to +q pastly!\*@\*
     quiet_nick = 'quiet_nick'
+    #: set the channel to +R
+    plusr_chan = 'plusr_chan'
 
 
 class BadWordsModule(Module):
@@ -60,6 +63,7 @@ class BadWordsModule(Module):
                 for a in self._actions():
                     {
                         'quiet_nick': _action_quiet_nick,
+                        'plusr_chan': _action_plusr_chan,
                     }[a.name](user, receiver)
                 return
 
@@ -73,3 +77,7 @@ def _action_quiet_nick(user, chan):
     ''' Tell chanserv to quiet the UserStr user's host on channel chan '''
     chanserv.internal_handle_command(
         user.nick, [chan], ['nick'], 'badword', is_quiet=True)
+
+
+def _action_plusr_chan(user, chan):
+    mode(chan, '+R')
