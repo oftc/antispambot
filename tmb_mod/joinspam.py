@@ -54,10 +54,12 @@ class JoinSpamModule(Module):
             '' for (_, n, c) in self.recent
             if nick == n and chan == c])
         will_ban = num_joins >= self.max_joins()
-        tmb.log(
-            '{} has joined {} {}/{} times in last {} mins{}.',
-            nick, chan, num_joins, self.max_joins(), self.recent_mins(),
-            ' Banning.' if will_ban else '')
+        # only log if >=50% of the way to being temp banned
+        if will_ban or float(num_joins) / self.max_joins >= 0.5:
+            tmb.log(
+                '{} has joined {} {}/{} times in last {} mins.{}',
+                nick, chan, num_joins, self.max_joins(), self.recent_mins(),
+                ' Banning.' if will_ban else '')
         if will_ban:
             chanserv.internal_handle_command(
                 nick, [chan], ['nick'],
