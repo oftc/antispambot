@@ -55,7 +55,7 @@ class JoinSpamModule(Module):
             if nick == n and chan == c])
         will_ban = num_joins >= self.max_joins()
         # only log if >=50% of the way to being temp banned
-        if will_ban or float(num_joins) / self.max_joins >= 0.5:
+        if will_ban or float(num_joins) / self.max_joins() >= 0.5:
             tmb.log(
                 '{} has joined {} {}/{} times in last {} mins.{}',
                 nick, chan, num_joins, self.max_joins(), self.recent_mins(),
