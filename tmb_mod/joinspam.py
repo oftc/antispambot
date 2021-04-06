@@ -18,8 +18,9 @@ from . import Module
 # To make calling weechat stuff take fewer characters
 w = weechat
 #: The reason to log for a temporary ban
-TEMP_BAN_REASON = 'Join spam, please fix your client or connection. '\
-    'Tell pastly or wait 4 hours for the ban to expire.'
+TEMP_BAN_REASON = 'Your client rejoined >={} times in '\
+    '{} minutes. Tell pastly when fixed or wait 4 hours for '\
+    'the ban to expire.'
 #: The duration of a temporary ban
 TEMP_BAN_DAYS = 4.0/24
 
@@ -63,7 +64,7 @@ class JoinSpamModule(Module):
         if will_ban:
             chanserv.internal_handle_command(
                 nick, [chan], ['nick'],
-                TEMP_BAN_REASON,
+                TEMP_BAN_REASON.format(self.max_joins(), self.recent_mins()),
                 is_quiet=False,
                 duration=TEMP_BAN_DAYS)
 
