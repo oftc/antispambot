@@ -29,6 +29,8 @@ w = weechat
 #: The :data:`RECENT_ACTIONS` cleanup function will forgot :class:`Action`\s
 #: older than this number of seconds.
 RECENT_SECS = 300
+#: The duration of a quiet. 0.25/24 is 15 minutes
+TEMP_QUIET_DAYS = 0.25/24
 
 
 class Action(enum.Enum):
@@ -154,4 +156,5 @@ class AntiFloodModule(Module):
 def _action_quiet_host(user, chan):
     ''' Tell chanserv to quiet the UserStr user's host on channel chan '''
     chanserv.internal_handle_command(
-        user.nick, [chan], ['host'], 'flooding', is_quiet=True)
+        user.nick, [chan], ['host'], 'flooding',
+        is_quiet=True, duration=TEMP_QUIET_DAYS)
