@@ -1,8 +1,9 @@
 ''' Anti-flood module
 
-If enabled,
-we keep a token bucket for every unique ``(user, channel)`` pair, and if the
-bucket runs out of tokens, we take some action(s) against the user.
+If enabled, we keep track of messages sent by all users in all moderated
+channels. If a user sends more than the configured number of messages within
+the configured time period, they are considered to be flooding and we take some
+action(s) against them.
 
 The :class:`Action` class lists all possible actions to take. For example,
 ``quiet_host`` will mute the user's host in the channel they flooded.
@@ -18,7 +19,6 @@ import time
 import tormodbot as tmb
 # other modules/packages
 from tmb_util import chanserv
-from tmb_util.tokenbucket import token_bucket
 from tmb_util.lcsv import lcsv
 from . import Module
 # from tmb_util.userstr import UserStr
@@ -26,9 +26,9 @@ from . import Module
 
 # To make calling weechat stuff take fewer characters
 w = weechat
-#: The :data:`RECENT_ACTIONS` cleanup function will forgot :class:`Action`\s
-#: older than this number of seconds.
-RECENT_SECS = 300
+#: The :data:`RECENT_ACTION_SECS` cleanup function will forgot
+#: :class:`Action`\s #: older than this number of seconds.
+RECENT_ACTION_SECS = 300
 #: The duration of a quiet. 0.25/24 is 15 minutes
 TEMP_QUIET_DAYS = 0.25/24
 
@@ -44,20 +44,10 @@ class AntiFloodModule(Module):
     NAME = 'antiflood'
 
     def __init__(self):
-        #: Store per-``(chan, nick)`` token buckets that cause us to take
-        #: action against the speaker when they run out of tokens
-        self.token_buckets = {}
-        #: Function to call every time a user sends a message to take away a
-        #: token from their bucket. The function takes the user's state as an
-        #: argument and returns ``(wait_time, new_state)``. ``wait_time`` is
-        #: the amount of time they need to wait until they would have a
-        #: non-zero number of tokens left (so if they currently have tokens,
-        #: ``wait_time`` is 0), and ``new_state`` is the user's updated state
-        #: that should be passed in next time.
-        #:
-        #: TODO: Be able to update this function's parameters if weechat's
-        #: config changes
-        self.tb_func = token_bucket(self._tb_size(), self._tb_rate())
+        #: Storage for recent message timestamps. Items are a three-tuple:
+        #:     (ts, nick, chan)
+        #: If the above changes, then look for usage of this and update it.
+        self.recent = deque()
         #: A FIFO list of :class:`Action`\s we've recently made. This is used
         #: to not repeat ourselves in case the flooder is able to send multiple
         #: messages after crossing the "is flooding" threshold before we've
@@ -79,10 +69,8 @@ class AntiFloodModule(Module):
         given :class:`tmb_util.userstr.UserStr` has sent ``message`` (``str``)
         to ``recevier`` (``str``). The receiver can be a channel ("#foo") or a
         nick ("foo").  '''
-        # TODO: notice nick changes somehow and update our TOKEN_BUCKET state
-        # to use the new nick. That way people can't spam a little, change
-        # nick, spam a little, etc. to avoid exhausting one nick's token
-        # bucket.
+        # TODO: notice nick changes somehow.  That way people can't spam a
+        # little, change nick, spam a little, etc.
         # The first two are sanity checks: that the receiver is a non-empty
         # string and that it looks like a channel name.
         # The third check is that it is one of our moderated channels. We only
@@ -92,19 +80,15 @@ class AntiFloodModule(Module):
                 receiver[0] != '#' or \
                 receiver not in tmb.mod_chans():
             return
-        # Add the channel to our state, if needed
-        if receiver not in self.token_buckets:
-            self.token_buckets[receiver] = {}
-        # Add the speaker to our state, if needed
-        if user.nick not in self.token_buckets[receiver]:
-            self.token_buckets[receiver][user.nick] = None
-        # Take a token from them and update their state
-        wait_time, new_state = self.tb_func(
-            self.token_buckets[receiver][user.nick])
-        self.token_buckets[receiver][user.nick] = new_state
-        # A positive wait_time indicates that they've run out of tokens, thus
-        # are flooding
-        if wait_time > 0:
+        self._clear_old()
+        nick = user.nick
+        chan = receiver
+        now = time.time()
+        self.recent.append((now, nick, chan))
+        num_msgs = len([
+            '' for (_, n, c) in self.recent
+            if nick == n and chan == c])
+        if num_msgs > self.max_msgs():
             # Get the configured list of Actions to take
             actions = self._actions()
             tmb.log('{} is flooding {}', user, receiver)
@@ -121,17 +105,15 @@ class AntiFloodModule(Module):
                 }[a.name](user, receiver)
         # tmb.log('{} {} {} {}', wait_time, new_state, user.nick, message)
 
-    def _tb_size(self):
-        ''' How many tokens (messages) a user may send before they are
+    def max_msgs(self):
+        ''' How many messages a user may send "recently" before they are
         considered to be flooding '''
         return int(w.config_get_plugin(self._conf_key('msg_limit')))
 
-    def _tb_rate(self):
-        ''' The amount of time, in seconds, that must pass before the user
-        earns another token '''
-        return \
-            float(w.config_get_plugin(self._conf_key('msg_limit_seconds'))) /\
-            self._tb_size()
+    def recent_secs(self):
+        ''' The duration in which a user may send max_msgs, and if they send
+        more, they are flooding. '''
+        return float(w.config_get_plugin(self._conf_key('msg_limit_seconds')))
 
     def _actions(self):
         ''' The list of Actions we will take when we detect someone flooding
@@ -142,15 +124,21 @@ class AntiFloodModule(Module):
     def _action_done_recently(self, action, user, chan):
         ''' Returns True if Action action has NOT been taken against UserStr
         user in channel str chan recently, otherwise False '''
-        # Cleanup recent_actions of any Action not recent anymore
-        now = time.time()
-        while len(self.recent_actions) and \
-                self.recent_actions[0][0] + RECENT_SECS < now:
-            self.recent_actions.popleft()
         for ts, ac, u, c in self.recent_actions:
             if (ac, u, c) == (action, user, chan):
                 return True
         return False
+
+    def _clear_old(self):
+        ''' Clear our memory of recent messages and recent actions taken '''
+        now = time.time()
+        while len(self.recent) and \
+                self.recent[0][0] + self.recent_secs() < now:
+            self.recent.popleft()
+        while len(self.recent_actions) and \
+                self.recent_actions[0][0] + RECENT_ACTION_SECS < now:
+            self.recent_actions.popleft()
+        return
 
 
 def _action_quiet_host(user, chan):
