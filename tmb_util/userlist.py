@@ -82,7 +82,12 @@ def part_cb(user, chan):
         # This shouldn't happen, but we definitely don't care
         return
     # old_len = len(D[chan])
-    D[chan].remove(user)
+    if user in D[chan]:
+        D[chan].remove(user)
+    else:
+        tmb.log(
+            '{} left {} without us knowing they were in the chan. '
+            '{} users in chan.', str(user), chan, len(D[chan]))
     # tmb.log('{} left {}, {} to {}', user.nick, chan, old_len, len(D[chan]))
 
 
