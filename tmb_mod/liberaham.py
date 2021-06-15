@@ -34,6 +34,7 @@ See the ``LIBERAHAM_*`` options in :mod:`config` for our configuration options.
 import weechat
 # stdlib imports
 import re
+import time
 # stuff that comes with tormodbot itself
 import tormodbot as tmb
 # other modules/packages
@@ -44,14 +45,16 @@ from . import Module
 w = weechat
 
 #: Additional response to give when voicing a person and restating their
-#: message. Parameter is their nick.
-EXTRA_RESPONSE = 'I am an antispam bot and voiced {0} automatically '\
-    'because they "definitely" aren\'t a spammer. {0} can now speak without '\
-    'my interference. Have a nice day!'
+#: message.
+EXTRA_RESPONSE = '(What\'s this? '\
+    'See https://tormodbot.pastly.xyz/liberaham.html )'
 #: The regex string that tells us whether the message is likely spam or not.
 REGEX = re.compile(
     'ǃ|ɑ|ɡ|ː|։|ഠ|፡|Ꭱ|Ꭲ|Ꭹ|Ꭻ|Ꮃ|Ꮇ|Ꮢ|Ꮤ|Ꮪ|Ꮯ|Ꮳ|Ꮴ|ᖇ|ᖴ|ᗷ|᛬|᜵|ᥒ|ᥙ|ᥱ|ᴠ|ᴡ|ỿ|․|⁄|Ⅰ|Ⅽ'
     '|ⅰ|ⅴ|ⅹ|ⅼ|ⅽ|ⅾ|ⅿ|∕|∨|∪|⋁|⎼|⠆|⧸|ⲟ|ⲣ|Ⲥ|ⲭ|ⵑ|︓|﹕|﹗|．|／')
+#: How often, in seconds, we will allow ourselves to also state the extra
+#: response. This is to make us less of a toy.
+EXTRA_RESPONSE_INTERVAL = 300
 
 
 class LiberaHamModule(Module):
@@ -59,6 +62,8 @@ class LiberaHamModule(Module):
     NAME = 'liberaham'
 
     def __init__(self):
+        #: The last time we gave the extra response.
+        self.last_extra_resp_ts = 0
         pass
 
     def privmsg_cb(self, user, receiver, message, is_opmod):
@@ -85,6 +90,8 @@ class LiberaHamModule(Module):
                 user.nick, receiver)
             return
         voice(receiver, user.nick)
-        notice(receiver, EXTRA_RESPONSE, user.nick)
         notice(receiver, '{} said: {}', user.nick, message)
+        if time.time() - self.last_extra_resp_ts > EXTRA_RESPONSE_INTERVAL:
+            notice(receiver, EXTRA_RESPONSE)
+            self.last_extra_resp_ts = time.time()
         return
