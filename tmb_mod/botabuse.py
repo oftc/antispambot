@@ -28,8 +28,10 @@ class BotAbuseModule(Module):
     NAME = 'botabuse'
 
     def __init__(self):
-        #: Storage for recent bot messages. Items are three-tuples:
+        #: Storage for recent bot messages. Items are three-tuples::
+        #:
         #:     (ts, nick, chan)
+        #:
         #: If the above changes, then _clear_old and handle_message needs to be
         #: updated.
         self.recent = deque()

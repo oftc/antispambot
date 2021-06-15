@@ -44,8 +44,10 @@ class AntiFloodModule(Module):
     NAME = 'antiflood'
 
     def __init__(self):
-        #: Storage for recent message timestamps. Items are a three-tuple:
+        #: Storage for recent message timestamps. Items are a three-tuple::
+        #:
         #:     (ts, nick, chan)
+        #:
         #: If the above changes, then look for usage of this and update it.
         self.recent = deque()
         #: A FIFO list of :class:`Action`\s we've recently made. This is used

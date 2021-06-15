@@ -30,8 +30,10 @@ class JoinSpamModule(Module):
     NAME = 'joinspam'
 
     def __init__(self):
-        #: Storage for recent joins. Items are three-tuples:
+        #: Storage for recent joins. Items are three-tuples::
+        #:
         #:     (ts, nick, chan)
+        #:
         #: If the above changes, then look for usage of this and update it.
         self.recent = deque()
 
