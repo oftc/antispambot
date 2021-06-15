@@ -1,5 +1,34 @@
 # -*- coding: utf-8 -*-
-'''
+''' Liberaham module
+
+If enabled, we look for spam on people's first messages, and if not spam, voice
+them.
+
+**This module makes significant assumptions that should be noted.** It may not
+play nicely with other moderation activities, or even with other tormodbot
+modules.
+
+**We assume** the moderated channels are ``+Mz``. The former means that
+unregistered users' messages are muted, and the latter means that any message
+that would be muted instead goes to the channel operators as an "opmod" or
+"statusmsg" message.
+
+**We assume** there is no other significant muting going on. People causing
+trouble in other ways are not muted, but instead banned. Or perhaps they aren't
+registered so you can get away with kicking them and ``+R`` the channel for a
+bit.
+
+If
+
+    - you're not presently getting the "THIS CHANNEL HAS MOVED TO
+      IRC.LIBERA.CHAT #HAMRADIO" spam, and
+    - the spam you're getting doesn't happen on the first message and can be
+      near-perfectly differentiated from non-spam with a single regex, then
+
+you probably do **not** want to use this module. (That's where the name comes
+from, by the way: libera.chat + #hamradio = liberaham)
+
+See the ``LIBERAHAM_*`` options in :mod:`config` for our configuration options.
 '''  # noqa: E501
 
 import weechat
