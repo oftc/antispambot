@@ -88,7 +88,7 @@ class Module:
     #     '''
     #     pass
 
-    def privmsg_cb(self, user, dest, message):
+    def privmsg_cb(self, user, dest, message, is_opmod):
         ''' Called whenever we are enabled and see a PRIVMSG.
 
         You want to overwrite this function if you care about messages in
@@ -103,6 +103,13 @@ class Module:
             was seen, or our nick (if a literal PM to us).
         :param str message: The message sent, without leading or trailing
             whitespace.
+        :param bool is_opmod: Whether or not this message is a statusmsg
+            targeted to @#channel as opposed to #channel as usual. OFTC's +z
+            channel mode (hybrid, not solanum) sends messages that would
+            otherwise be blocked to chanops using this method, and when it
+            does, it calls it opmod. If this is set on this message, you must
+            be a chanop in the channel (congratulations!) and you and your
+            fellow chanops are the only ones that saw the message.
         '''
         pass
 
@@ -127,4 +134,30 @@ class Module:
         :param str messge: The message sent, without leading or trailing
             whitespace.
         '''
+        pass
+
+    def whois_cb(self, whois_code, nick, message):
+        ''' Called whenever we are enabled and receive certain /whois-related
+        codes.
+
+        .. note::
+
+            At the time of writing, a tiny subset of codes are actually
+            listened for: just enough for the liberaham module to work. If you
+            want to know more than (i) what nick this is about, (ii) if they
+            are registered with nickserv, and (iii) when the whois data is
+            done, you will have to listen for more in tormodbot.py.
+
+        .. note::
+
+            Whois information about globally-ignored users does not trigger
+            this.
+
+        :param int whois_code: The code number for this whois line. Refer to
+            http://www.faqs.org/rfcs/rfc1459.html and
+            https://github.com/oftc/oftc-hybrid/blob/develop/include/numeric.h and
+            https://github.com/oftc/oftc-hybrid/blob/develop/modules/m_whois.c
+        :param str nick: The nick that is the subject of this whois message.
+        :param str message: The remaining part of this whois message.
+            '''  # noqa: E501
         pass

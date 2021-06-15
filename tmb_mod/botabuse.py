@@ -85,7 +85,7 @@ class BotAbuseModule(Module):
                 duration=self.mute_secs * 1.0 / SECS_IN_DAY)
             self.actions.append((now, nick, chan))
 
-    def privmsg_cb(self, user, receiver, message):
+    def privmsg_cb(self, user, receiver, message, is_opmod):
         if user.nick not in self._botnames() or \
                 not len(receiver) or \
                 receiver[0] != '#' or \

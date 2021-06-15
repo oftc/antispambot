@@ -149,6 +149,10 @@ JOINSPAM_MAX_JOINS = '6'
 #: Time period to consider when counting joins.
 JOINSPAM_RECENT_MINS = '30'
 
+# ### liberaham.py configuration options ###
+#: Whether to enable the :mod:`tmb_mod.liberaham` module
+LIBERAHAM_ENABLED = 'on'
+
 conf = {
     'serv': SERV,
     'log_chan': LOG_CHAN,
@@ -188,4 +192,5 @@ conf = {
     'joinspam_enabled': JOINSPAM_ENABLED,
     'joinspam_max_joins': JOINSPAM_MAX_JOINS,
     'joinspam_recent_mins': JOINSPAM_RECENT_MINS,
+    'liberaham_enabled': LIBERAHAM_ENABLED,
 }

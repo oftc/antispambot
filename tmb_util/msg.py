@@ -94,6 +94,11 @@ def reconnect(server):
     return _send('/reconnect ' + server)
 
 
+def whois(nick):
+    ''' Sends a /whois <nick> <nick> command. Doesn't handle the response! '''
+    return _send('/whois {} {}'.format(nick, nick))
+
+
 def _send(s):
     cmd_q.send(s)
     # return w.command('', s)

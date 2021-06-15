@@ -35,7 +35,7 @@ class BadWordsModule(Module):
     ''' See the module-level documentation '''
     NAME = 'badwords'
 
-    def privmsg_cb(self, user, receiver, message):
+    def privmsg_cb(self, user, receiver, message, is_opmod):
         ''' Main tormodbot code calls into this when we're enabled and the
         given :class:`tmb_util.userstr.UserStr` has sent ``message`` (``str``)
         to ``recevier`` (``str``). The receiver can be a channel ("#foo") or a
