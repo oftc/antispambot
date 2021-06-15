@@ -135,29 +135,3 @@ class Module:
             whitespace.
         '''
         pass
-
-    def whois_cb(self, whois_code, nick, message):
-        ''' Called whenever we are enabled and receive certain /whois-related
-        codes.
-
-        .. note::
-
-            At the time of writing, a tiny subset of codes are actually
-            listened for: just enough for the liberaham module to work. If you
-            want to know more than (i) what nick this is about, (ii) if they
-            are registered with nickserv, and (iii) when the whois data is
-            done, you will have to listen for more in tormodbot.py.
-
-        .. note::
-
-            Whois information about globally-ignored users does not trigger
-            this.
-
-        :param int whois_code: The code number for this whois line. Refer to
-            http://www.faqs.org/rfcs/rfc1459.html and
-            https://github.com/oftc/oftc-hybrid/blob/develop/include/numeric.h and
-            https://github.com/oftc/oftc-hybrid/blob/develop/modules/m_whois.c
-        :param str nick: The nick that is the subject of this whois message.
-        :param str message: The remaining part of this whois message.
-            '''  # noqa: E501
-        pass

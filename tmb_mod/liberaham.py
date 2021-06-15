@@ -30,11 +30,7 @@ class LiberaHamModule(Module):
     NAME = 'liberaham'
 
     def __init__(self):
-        #: Cache of (nick, chan, ts, msg) we are /whois-ing and waiting on the
-        #: response. The msg is what they said in an opmod, so that we can
-        #: restate it if necessary.
-        #: Keys are nick. Values are a list of (ts, chan, msg) items.
-        self.whois_cache = {}
+        pass
 
     def privmsg_cb(self, user, receiver, message, is_opmod):
         ''' Main tormodbot code calls into this when we're enabled and the
@@ -53,7 +49,7 @@ class LiberaHamModule(Module):
         # Not a message from a muted user going to @#chan, so return
         if not is_opmod:
             return
-        # It is indeed spam, so don't do a whois lookup
+        # It is indeed spam, so don't voice
         if REGEX.search(message):
             tmb.log(
                 '{} is probably spamming {}, so not voicing.',

@@ -332,43 +332,6 @@ def privmsg_cb(data, signal, signal_data):
     return w.WEECHAT_RC_OK
 
 
-def whois_cb(data, signal, signal_data):
-    ''' Callback for when we see certain /whois-related messages from the
-    server. '''
-    # signal is for example: "oftc,irc_raw_in2_307"
-    # signal_data is for example:
-    #     ":helix.oftc.net 307 tormodbot_dev pastly :user has identified and
-    #     verified with services"
-    #############
-    # Parse data
-    #############
-    # remove leading ':'
-    assert signal_data.startswith(':')
-    signal_data = signal_data[1:]
-    # parse out who sent the message. It should be an IRC server, not a n!u@h
-    sender, signal_data = signal_data.split(' ', 1)
-    sender = sender.lower()
-    # parse out the code, e.g. 307
-    code, signal_data = signal_data.split(' ', 1)
-    code = int(code)
-    # parse out the receiver, which should be us
-    receiver, signal_data = signal_data.split(' ', 1)
-    # parse out the nick that this is about
-    subject_nick, signal_data = signal_data.split(' ', 1)
-    subject_nick = subject_nick.lower()
-    #######################
-    # Determine what to do
-    #######################
-    if subject_nick in ignores():
-        log('Ignore whois response regarding {}', subject_nick)
-        return w.WEECHAT_RC_OK
-    # tell enabled mods about this event
-    for mod in [m for m in MODULES if m.enabled()]:
-        if mod.enabled():
-            mod.whois_cb(code, subject_nick, signal_data)
-    return w.WEECHAT_RC_OK
-
-
 def notice_cb(data, signal, signal_data):
     ''' Callback for when we see a NOTICE '''
     # signal is for example: "oftc,irc_raw_in2_NOTICE"
@@ -493,9 +456,6 @@ if __name__ == '__main__':
     w.hook_signal('*,irc_raw_in2_PART', 'part_cb', '')
     w.hook_signal('*,irc_raw_in2_PRIVMSG', 'privmsg_cb', '')
     w.hook_signal('*,irc_raw_in2_NOTICE', 'notice_cb', '')
-    w.hook_signal('*,irc_raw_in2_311', 'whois_cb', '')  # whois user
-    w.hook_signal('*,irc_raw_in2_307', 'whois_cb', '')  # is reg with ns
-    w.hook_signal('*,irc_raw_in2_318', 'whois_cb', '')  # whois end
     w.hook_config('plugins.var.python.' + SCRIPT_NAME + '.*', 'config_cb', '')
 
     # count = 0
