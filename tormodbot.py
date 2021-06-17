@@ -10,7 +10,7 @@ import tmb_util.cmdqueue as cmd_q
 import help as tmb_help
 from tmb_util import chanserv
 from tmb_util import userlist
-from tmb_util.msg import notice, msg, join, mode, reconnect
+from tmb_util.msg import notice, join, mode, reconnect, oper_w_eval
 from tmb_util.lcsv import lcsv
 from tmb_util.userstr import UserStr
 
@@ -132,13 +132,24 @@ def timer_cb(data, remaining_calls):
 
 
 def delayed_connect_cb():
+    # oper up so we can force ourselves to be chanop in all our chans
+    log(
+        'Trying to oper up with secure username "oper_user" and secure '
+        'password "oper_pw". Make sure these are set with /secure.')
+    oper_w_eval('${sec.data.oper_user}', '${sec.data.oper_pw}')
+    # set god mode so we can definitely +o ourselves in all our mod chans
+    mode(my_nick(), '+S')
     # make sure we're in all the chans for modding, and for logging
     for c in mod_chans():
         join(c)
     if log_chan():
         join(log_chan())
-    # make sure we're op in all the modding chans
-    chanop_chans(mod_chans(), True)
+    # make sure we're op in all the mod chans, and force the mode to +Mz
+    for c in mod_chans():
+        mode(c, '+o', my_nick())
+        mode(c, '+Mz')
+    # unset god mode
+    mode(my_nick(), '-S')
     # make sure we know about all users in all chans
     userlist.connect_cb()
     return w.WEECHAT_RC_OK
@@ -325,16 +336,6 @@ def notice_cb(data, signal, signal_data):
         if mod.enabled():
             mod.notice_cb(sender, receiver, message)
     return w.WEECHAT_RC_OK
-
-
-def chanop_chans(chans, up):
-    ''' Given a list of channels, ask chanserv to op us in each one (if *up* is
-    True) otherwise deop ourself '''
-    for chan in chans:
-        if up:
-            msg(chanserv_user().nick, 'op {} {}', chan, my_nick())
-        else:
-            mode(chan, '-o', my_nick())
 
 
 def config_cb(data, option, value):

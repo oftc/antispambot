@@ -94,6 +94,15 @@ def reconnect(server):
     return _send('/reconnect ' + server)
 
 
+def oper_w_eval(username, password):
+    ''' Send an /oper command within /eval such that variables such as
+    ${sec.data.oper_user} can be used in the command. For example::
+
+        oper('${sec.data.oper_user}', '${sec.data.oper_pw}')
+    '''
+    return _send('/eval /oper ' + username + ' ' + password)
+
+
 def _send(s):
     cmd_q.send(s)
     # return w.command('', s)
