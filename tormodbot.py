@@ -289,7 +289,8 @@ def notice_cb(data, signal, signal_data):
     ''' Callback for when we see a NOTICE '''
     # signal is for example: "oftc,irc_raw_in2_NOTICE"
     # signal_data is for example:
-    #     ":dacia.oftc.net NOTICE pastly :Activating Cloak: example.com -> foo.oftc.net for foo"
+    #     ":dacia.oftc.net NOTICE pastly :Activating Cloak: example.com ->
+    #         foo.oftc.net for foo"
     #     ":nick!user@host NOTICE #channel :some messge"
     #############
     # Parse data
