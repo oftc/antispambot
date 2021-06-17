@@ -103,6 +103,11 @@ def oper_w_eval(username, password):
     return _send('/eval /oper ' + username + ' ' + password)
 
 
+def kline(mask, reason):
+    s = 'akill add {} {}'.format(mask, reason)
+    return msg('operserv', s)
+
+
 def _send(s):
     cmd_q.send(s)
     # return w.command('', s)

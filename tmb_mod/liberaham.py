@@ -38,7 +38,8 @@ import time
 # stuff that comes with tormodbot itself
 import tormodbot as tmb
 # other modules/packages
-from tmb_util.msg import notice, voice
+from tmb_util.msg import notice, voice, kline
+from tmb_util.userlist import user_in_chans
 from . import Module
 
 # To make calling weechat stuff take fewer characters
@@ -54,7 +55,10 @@ REGEX = re.compile(
     '|ⅰ|ⅴ|ⅹ|ⅼ|ⅽ|ⅾ|ⅿ|∕|∨|∪|⋁|⎼|⠆|⧸|ⲟ|ⲣ|Ⲥ|ⲭ|ⵑ|︓|﹕|﹗|．|／')
 #: How often, in seconds, we will allow ourselves to also state the extra
 #: response. This is to make us less of a toy.
-EXTRA_RESPONSE_INTERVAL = 300
+EXTRA_RESPONSE_INTERVAL = 15 * 60
+#: The reason to give for the K-Line. One parameter: it is the channel.
+KLINE_REASON = 'Suspected spammer. Mail support@oftc.net with questions'\
+    '|libera non-ascii spam in {} !dronebl'
 
 
 class LiberaHamModule(Module):
@@ -83,11 +87,13 @@ class LiberaHamModule(Module):
         # Not a message from a muted user going to @#chan, so return
         if not is_opmod:
             return
+        # User isn't in the channel, so return. With +z, messages from users
+        # not in the channel go to chanops like us.
+        if receiver not in user_in_chans(user):
+            return
         # It is indeed spam, so don't voice
         if REGEX.search(message):
-            tmb.log(
-                '{} is probably spamming {}, so not voicing.',
-                user.nick, receiver)
+            kline('*@' + user.host, KLINE_REASON.format(receiver))
             return
         voice(receiver, user.nick)
         notice(receiver, '{} said: {}', user.nick, message)
