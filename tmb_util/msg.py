@@ -108,6 +108,12 @@ def kline(mask, reason):
     return msg('operserv', s)
 
 
+def close(buffer_name):
+    ''' Close the given buffer by name, e.g. a channel name. '''
+    s = '/close {}'.format(buffer_name)
+    return _send(s)
+
+
 def _send(s):
     cmd_q.send(s)
     # return w.command('', s)

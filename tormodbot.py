@@ -10,7 +10,7 @@ import tmb_util.cmdqueue as cmd_q
 import help as tmb_help
 from tmb_util import chanserv
 from tmb_util import userlist
-from tmb_util.msg import notice, join, mode, reconnect, oper_w_eval
+from tmb_util.msg import notice, join, mode, reconnect, oper_w_eval, close
 from tmb_util.lcsv import lcsv
 from tmb_util.userstr import UserStr
 
@@ -144,6 +144,8 @@ def delayed_connect_cb():
         join(c)
     if log_chan():
         join(log_chan())
+    if cmd_chan():
+        join(cmd_chan())
     # make sure we're op in all the mod chans, and force the mode to +Mz
     for c in mod_chans():
         mode(c, '+o', my_nick())
@@ -211,6 +213,34 @@ def part_cb(data, signal, signal_data):
     return w.WEECHAT_RC_OK
 
 
+def _handle_command_mod(dest, chan):
+    ''' Handle the 'mod' command from masters, sending any response messages to
+    dest. '''
+    if not chan:
+        notice(dest, lcsv(mod_chans()))
+        return
+    chans = set(mod_chans())
+    chans.add(chan)
+    w.config_set_plugin('mod_chans', lcsv(chans))
+    notice(dest, 'Okay. mod_chans={}', lcsv(chans))
+    mode(my_nick(), '+S')
+    join(chan)
+    mode(chan, '+o', my_nick())
+    mode(chan, '+Mz')
+    mode(my_nick(), '-S')
+
+
+def _handle_command_unmod(dest, chan):
+    chans = set(mod_chans())
+    if chan not in chans:
+        notice(dest, 'Not modding {}', chan)
+        return
+    chans.remove(chan)
+    w.config_set_plugin('mod_chans', lcsv(chans))
+    notice(dest, 'Okay. mod_chans={}', lcsv(chans))
+    close(chan)
+
+
 def handle_command(user, where, message):
     ''' UserStr *user* sent us str *message* that maybe should be treated as a
     command.  The caller DID verified this user has permission to command us
@@ -235,6 +265,17 @@ def handle_command(user, where, message):
         return w.WEECHAT_RC_OK
     elif words[0].lower() == 'help':
         return tmb_help.handle_command(user, where, message)
+    elif words[0].lower() == 'mod':
+        chan = words[1].lower() if len(words) == 2 else None
+        _handle_command_mod(dest, chan)
+        return w.WEECHAT_RC_OK
+    elif words[0].lower() == 'unmod':
+        if len(words) != 2:
+            notice(dest, 'Provide one channel name')
+            return w.WEECHAT_RC_OK
+        chan = words[1].lower()
+        _handle_command_unmod(dest, chan)
+        return w.WEECHAT_RC_OK
     # This function should NOT assume that the given message contains a valid
     # command.
     return w.WEECHAT_RC_OK

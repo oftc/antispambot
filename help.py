@@ -17,12 +17,15 @@ w = weechat
 #: All known commands for which we can provide help
 KNOWN_CMDS = [
     'reconnect', 'ping',
+    'mod', 'unmod',
 ]
 KNOWN_CMDS.sort()
 #: Main help function calls into these to get help on specific commands
 TOP_LVL_CMDS = {
     'ping': lambda s: _help_ping(s),
     'reconnect': lambda s: _help_reconnect(s),
+    'mod': lambda s: _help_mod(s),
+    'unmod': lambda s: _help_unmod(s),
 }
 for _ in KNOWN_CMDS:
     assert _ in TOP_LVL_CMDS
@@ -42,6 +45,17 @@ def _help_ping(cmd_msg):
 def _help_reconnect(cmd_msg):
     ''' Help string for 'help reconnect' '''
     return 'Executes /reconnect, forcing us to reconnect to the IRC network'
+
+
+def _help_mod(cmd_msg):
+    ''' Help string for help mod '''
+    return 'List moderated channels, or if a channel is provided, add it to '\
+        'the list of moderated channels.'
+
+
+def _help_unmod(cmd_msg):
+    ''' Help string for help unmod '''
+    return 'Stop moderating and leave the provided channel.'
 
 
 def handle_command(user, where, message):
