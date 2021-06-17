@@ -112,6 +112,10 @@ def code_url():
     return CONF['code_url']
 
 
+def liberaham_url():
+    return CONF['liberaham_url']
+
+
 def timer_cb(data, remaining_calls):
     ''' Whenever a timer expires, this function should be called. If data is
     set, then it was that module that set a timer that expired, so we should
@@ -324,8 +328,17 @@ def privmsg_cb(data, signal, signal_data):
     # Try handling the message as a command if it came from a master in a PM or
     # in our command channel. A master's PM may not be a command, so it is
     # wrong to return early here.
-    if (dest == my_nick() or dest == cmd_chan()) and user.nick in masters():
-        handle_command(user, dest, message)
+    if dest == my_nick() or dest == cmd_chan():
+        if user.nick in masters():
+            handle_command(user, dest, message)
+        else:
+            resp_dest = user.nick if dest == my_nick() else cmd_chan()
+            notice(
+                resp_dest, 'I am a bot operated by OFTC netops (mostly '
+                'pastly) that blocks the "libera hamradio" spam before '
+                'channels see it. For more information, see {} or ask about '
+                'me in #oftc.', liberaham_url())
+        return w.WEECHAT_RC_OK
     # If it came in on something other than a moderated channel (e.g. cmd_chan
     # or PM), ignore it
     if dest not in mod_chans() + [my_nick(), cmd_chan()]:

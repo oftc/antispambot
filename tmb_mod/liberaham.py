@@ -47,8 +47,7 @@ w = weechat
 
 #: Additional response to give when voicing a person and restating their
 #: message.
-EXTRA_RESPONSE = '(What\'s this? '\
-    'See https://tormodbot.pastly.xyz/liberaham.html )'
+EXTRA_RESPONSE = '(What\'s this? See {} )'.format(tmb.liberaham_url())
 #: The regex string that tells us whether the message is likely spam or not.
 REGEX = re.compile(
     'ǃ|ɑ|ɡ|ː|։|ഠ|፡|Ꭱ|Ꭲ|Ꭹ|Ꭻ|Ꮃ|Ꮇ|Ꮢ|Ꮤ|Ꮪ|Ꮯ|Ꮳ|Ꮴ|ᖇ|ᖴ|ᗷ|᛬|᜵|ᥒ|ᥙ|ᥱ|ᴠ|ᴡ|ỿ|․|⁄|Ⅰ|Ⅽ'

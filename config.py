@@ -47,6 +47,9 @@ MSG_BURST = '5'
 MSG_RATE = '505'
 #: Where the source code for this bot is hosted
 CODE_URL = 'https://gitlab.torproject.org/pastly/weechat-tormodbot'
+#: Where more information about the bot's anti-liberaham functionality can be
+#: found
+LIBERAHAM_URL = 'https://tormodbot.pastly.xyz/liberaham.html'
 
 # ### liberaham.py configuration options ###
 #: Whether to enable the :mod:`tmb_mod.liberaham` module
@@ -64,5 +67,6 @@ conf = {
     'msg_burst': MSG_BURST,
     'msg_rate': MSG_RATE,
     'code_url': CODE_URL,
+    'liberaham_url': LIBERAHAM_URL,
     'liberaham_enabled': LIBERAHAM_ENABLED,
 }
