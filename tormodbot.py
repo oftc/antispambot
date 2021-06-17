@@ -4,13 +4,6 @@ import os
 import sys
 # stuff that comes with tormodbot itself
 from config import conf as CONF
-import tmb_mod.autovoice
-import tmb_mod.antiflood
-import tmb_mod.badwords
-import tmb_mod.botabuse
-import tmb_mod.faq
-import tmb_mod.hello
-import tmb_mod.joinspam
 import tmb_mod.liberaham
 # other modules/packages
 import tmb_util.cmdqueue as cmd_q
@@ -437,13 +430,6 @@ if __name__ == '__main__':
     # create modules
     if not len(MODULES):
         MODULES = [
-            tmb_mod.antiflood.AntiFloodModule(),
-            tmb_mod.autovoice.AutoVoiceModule(),
-            tmb_mod.badwords.BadWordsModule(),
-            tmb_mod.botabuse.BotAbuseModule(),
-            tmb_mod.faq.FAQModule(),
-            tmb_mod.hello.HelloModule(),
-            tmb_mod.joinspam.JoinSpamModule(),
             tmb_mod.liberaham.LiberaHamModule(),
         ]
 
