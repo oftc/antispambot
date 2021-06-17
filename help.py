@@ -8,7 +8,6 @@ import weechat
 # stuff that comes with tormodbot itself
 import tormodbot as tmb
 # other modules/packages
-from tmb_util.chanserv import TEMP_BAN_DAYS
 from tmb_util.msg import notice
 
 
@@ -17,22 +16,12 @@ w = weechat
 
 #: All known commands for which we can provide help
 KNOWN_CMDS = [
-    'reconnect', 'ping', 'mode', 'info',
-    'akick', 'ban',
-    'quiet', 'mute',
-    'kick',
+    'reconnect', 'ping',
 ]
 KNOWN_CMDS.sort()
 #: Main help function calls into these to get help on specific commands
 TOP_LVL_CMDS = {
-    'akick': lambda s: _help_akickquiet(s, 'akick'),
-    'ban': lambda s: _help_akickquiet(s, 'akick'),
-    'kick': lambda s: _help_kick(s),
-    'info': lambda s: _help_info(s),
-    'mode': lambda s: _help_mode(s),
-    'mute': lambda s: _help_akickquiet(s, 'quiet'),
     'ping': lambda s: _help_ping(s),
-    'quiet': lambda s: _help_akickquiet(s, 'quiet'),
     'reconnect': lambda s: _help_reconnect(s),
 }
 for _ in KNOWN_CMDS:
@@ -43,72 +32,6 @@ def _help():
     ''' Help string for empty 'help' command '''
     return 'Known commands are: ' + ', '.join(KNOWN_CMDS) + '\n' +\
         'Try: help ping'
-
-
-def _help_akickquiet(s, which):
-    ''' Help string for akick/ban/mute/quiet '''
-    return '''{which} a user from a channel.
-By default, an {which} is temporary for {temp_d} days.
-Usage:
-.   {which} [-p|--permanent] [-d|--duration DAYS] <chans_csv> <nick> <patterns_csv> <reason ...>
--p,--permanent: Make the {which} permanent. This overrides -d if it is also provided.
--d,--duration DAYS: Make the {which} temporary for the provided number of DAYS.
-chans_csv: CSV list of channels from which to {which} the user.
-nick: The nick of the user to {which}.
-patterns_csv: CSV list of hostmask patterns to {which}.
-reason: Required. The reason for the {which} to record with chanserv.
-.
-Consider the user crazycake!jasper@example.com.
-To permanently {which} his nick and host from #foo and #bar:
-.    {which} -p #foo,#bar crazycake nick,host asks too many stupid questions
-This results in {me} issuing four chanserv commands:
-.    {which} add #foo crazycake!*@* asks too many stupid questions
-.    {which} add #bar crazycake!*@* asks too many stupid questions
-.    {which} add #foo *!*@example.com asks too many stupid questions
-.    {which} add #bar *!*@example.com asks too many stupid questions
-.
-Instead of a CSV of channels, you can simply provide "all", resulting in a {which} in every moderated channel.
-.
-The hostmask patterns are:
-.    nick nick* *nick *nick*
-.    user user* *user *user*
-.    host host* *host *host*
-They add asterisks ('*') to the corresponding spots in the nick!user@host hostmask. For example:
-.    {which} #foo crazycake nick*,user*,*host* thinks he knows more than he does
-This results in {me} issuing three chanserv commands:
-.    {which} add #foo crazycake*!*@*
-.    {which} add #foo *!jasper*@*
-.    {which} add #foo *!*@*example.com*
-'''.format(  # noqa: E501
-        which=which,
-        me=tmb.my_nick(),
-        temp_d=TEMP_BAN_DAYS)
-
-
-def _help_kick(cmd_msg):
-    ''' Help string for 'help kick' command '''
-    return '''Kick a user from some channel, optional reason.
-Ex: "kick #foo crazycake being really annoying" kicks crazycake from #tor with the provided reason.
-Ex: "kick #bar jeff" kicks jeff from #bar (reason will be set to "jeff").
-Note that kicking someone, by itself, doesn't stop them from rejoining.
-'''
-
-
-def _help_info(cmd_msg):
-    ''' Help string for 'help info' command '''
-    return '''Get info on a nick.
-Ex: "info crazycake" returns information we have on crazycake
-Additional info may be provided in future updates, thus this help is vague.
-'''
-
-
-def _help_mode(cmd_msg):
-    ''' Help string for 'help mode' '''
-    return '''Set a channel or user mode.
-Ex: "mode #tor +R" makes us execute "/mode #tor +R"
-If you'd like to mute/quiet (+q) or ban/akick (+b) someone, use the
-quiet/akick commands instead.
-'''
 
 
 def _help_ping(cmd_msg):

@@ -10,7 +10,7 @@ import tmb_util.cmdqueue as cmd_q
 import help as tmb_help
 from tmb_util import chanserv
 from tmb_util import userlist
-from tmb_util.msg import notice, msg, join, mode, reconnect, kick
+from tmb_util.msg import notice, msg, join, mode, reconnect
 from tmb_util.lcsv import lcsv
 from tmb_util.userstr import UserStr
 
@@ -221,46 +221,6 @@ def handle_command(user, where, message):
     elif words[0].lower() == 'reconnect':
         notice(dest, 'Okay. Be right back!')
         reconnect(serv())
-        return w.WEECHAT_RC_OK
-    elif words[0].lower() == 'mode':
-        # must have 'mode' 'chan/nick' and 'flags' at least, but could have
-        # arguments for flags as well
-        if len(words) < 3:
-            log('Invalid mode command from {}: /{}', user.nick, message)
-            return w.WEECHAT_RC_OK
-        chan_or_nick = words[1]
-        flags = words[2]
-        args = [] if len(words) == 3 else words[3:]
-        log('Executing "/{}" on behalf of {}', message, user.nick)
-        mode(chan_or_nick, flags, *args)
-        return w.WEECHAT_RC_OK
-    elif words[0].lower() == 'info':
-        if len(words) != 2:
-            log(
-                'Invalid info command (just give nick as argument): {}',
-                message)
-            return w.WEECHAT_RC_OK
-        user = userlist.nick_to_user(words[1])
-        if not user:
-            log('No known user with nick {}', words[1])
-            return w.WEECHAT_RC_OK
-        chans = userlist.user_in_chans(user)
-        s = '{} is in: {}'.format(user, ', '.join(chans))
-        notice(dest, s)
-        return w.WEECHAT_RC_OK
-    elif words[0].lower() in ['quiet', 'akick']:
-        return chanserv.handle_command(user, where, message)
-    elif words[0].lower() in ['kick']:
-        if len(words) < 3:
-            log('Invalid kick command (kick $chan $nick $reason)')
-            return w.WEECHAT_RC_OK
-        chan = words[1].lower()
-        nick = words[2]
-        reason = ' '.join(words[3:])
-        if chan not in mod_chans():
-            log('{} is not a mod_chan, so will not kick', chan)
-            return w.WEECHAT_RC_OK
-        kick(chan, nick, reason)
         return w.WEECHAT_RC_OK
     elif words[0].lower() == 'help':
         return tmb_help.handle_command(user, where, message)
