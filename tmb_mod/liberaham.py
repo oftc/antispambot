@@ -48,10 +48,14 @@ w = weechat
 #: Additional response to give when voicing a person and restating their
 #: message.
 EXTRA_RESPONSE = '(What\'s this? See {} )'.format(tmb.liberaham_url())
-#: The regex string that tells us whether the message is likely spam or not.
-REGEX = re.compile(
-    'ǃ|ɑ|ɡ|ː|։|ഠ|፡|Ꭱ|Ꭲ|Ꭹ|Ꭻ|Ꮃ|Ꮇ|Ꮢ|Ꮤ|Ꮪ|Ꮯ|Ꮳ|Ꮴ|ᖇ|ᖴ|ᗷ|᛬|᜵|ᥒ|ᥙ|ᥱ|ᴠ|ᴡ|ỿ|․|⁄|Ⅰ|Ⅽ'
-    '|ⅰ|ⅴ|ⅹ|ⅼ|ⅽ|ⅾ|ⅿ|∕|∨|∪|⋁|⎼|⠆|⧸|ⲟ|ⲣ|Ⲥ|ⲭ|ⵑ|︓|﹕|﹗|．|／')
+#: Set of regexes that will earn you an immediate k-line if seen
+REGEX_KLINE = [
+    re.compile(
+        'ǃ|ɑ|ɡ|ː|։|ഠ|፡|Ꭱ|Ꭲ|Ꭹ|Ꭻ|Ꮃ|Ꮇ|Ꮢ|Ꮤ|Ꮪ|Ꮯ|Ꮳ|Ꮴ|ᖇ|ᖴ|ᗷ|᛬|᜵|ᥒ|ᥙ|ᥱ|ᴠ|ᴡ|ỿ|․|⁄|Ⅰ|Ⅽ'
+        '|ⅰ|ⅴ|ⅹ|ⅼ|ⅽ|ⅾ|ⅿ|∕|∨|∪|⋁|⎼|⠆|⧸|ⲟ|ⲣ|Ⲥ|ⲭ|ⵑ|︓|﹕|﹗|．|／'),
+    re.compile('libera.*midipix', re.IGNORECASE),
+    re.compile('imgur.*com', re.IGNORECASE),
+]
 #: How often, in seconds, we will allow ourselves to also state the extra
 #: response. This is to make us less of a toy.
 EXTRA_RESPONSE_INTERVAL = 15 * 60
@@ -91,9 +95,10 @@ class LiberaHamModule(Module):
         if receiver not in user_in_chans(user):
             return
         # It is indeed spam, so don't voice
-        if REGEX.search(message):
-            kline('*@' + user.host, KLINE_REASON.format(receiver))
-            return
+        for r in REGEX_KLINE:
+            if r.search(message):
+                kline('*@' + user.host, KLINE_REASON.format(receiver))
+                return
         voice(receiver, user.nick)
         notice(receiver, '{} said: {}', user.nick, message)
         if time.time() - self.last_extra_resp_ts > EXTRA_RESPONSE_INTERVAL:
