@@ -48,20 +48,23 @@ w = weechat
 #: Additional response to give when voicing a person and restating their
 #: message.
 EXTRA_RESPONSE = '(What\'s this? See {} )'.format(tmb.liberaham_url())
-#: Set of regexes that will earn you an immediate k-line if seen
+#: List of (regex, reason) that will earn you an immediate k-line if seen
 REGEX_KLINE = [
-    re.compile(
-        'ǃ|ɑ|ɡ|ː|։|ഠ|፡|Ꭱ|Ꭲ|Ꭹ|Ꭻ|Ꮃ|Ꮇ|Ꮢ|Ꮤ|Ꮪ|Ꮯ|Ꮳ|Ꮴ|ᖇ|ᖴ|ᗷ|᛬|᜵|ᥒ|ᥙ|ᥱ|ᴠ|ᴡ|ỿ|․|⁄|Ⅰ|Ⅽ'
-        '|ⅰ|ⅴ|ⅹ|ⅼ|ⅽ|ⅾ|ⅿ|∕|∨|∪|⋁|⎼|⠆|⧸|ⲟ|ⲣ|Ⲥ|ⲭ|ⵑ|︓|﹕|﹗|．|／'),
-    re.compile('libera.*midipix', re.IGNORECASE),
-    re.compile('imgur.*com', re.IGNORECASE),
+    (
+        re.compile(
+            'ǃ|ɑ|ɡ|ː|։|ഠ|፡|Ꭱ|Ꭲ|Ꭹ|Ꭻ|Ꮃ|Ꮇ|Ꮢ|Ꮤ|Ꮪ|Ꮯ|Ꮳ|Ꮴ|ᖇ|ᖴ|ᗷ|᛬|᜵|ᥒ|ᥙ|ᥱ|ᴠ|ᴡ|ỿ|․|'
+            '⁄|Ⅰ|Ⅽ|ⅰ|ⅴ|ⅹ|ⅼ|ⅽ|ⅾ|ⅿ|∕|∨|∪|⋁|⎼|⠆|⧸|ⲟ|ⲣ|Ⲥ|ⲭ|ⵑ|︓|﹕|﹗|．|／'),
+        'libera non-ascii spam'),
+    (re.compile('libera.*midipix', re.IGNORECASE), 'libera/midipix regex'),
+    (re.compile('imgur.*com', re.IGNORECASE), 'imgur.com link'),
 ]
 #: How often, in seconds, we will allow ourselves to also state the extra
 #: response. This is to make us less of a toy.
 EXTRA_RESPONSE_INTERVAL = 30 * 60
-#: The reason to give for the K-Line. One parameter: it is the channel.
+#: The reason to give for the K-Line. Two parameters: the oper-only reason and
+#: the channel
 KLINE_REASON = 'Suspected spammer. Mail support@oftc.net with questions'\
-    '|libera non-ascii spam in {} !dronebl'
+    '|{} in {} !dronebl'
 #: When redactding a URL, replace the URL with this.
 REDACTED_URL = '<REDACTED URL>'
 #: Regex that mataches on URL-looking things
@@ -105,9 +108,11 @@ class LiberaHamModule(Module):
         if receiver not in user_in_chans(user):
             return
         # It is indeed spam, so don't voice
-        for r in REGEX_KLINE:
-            if r.search(message):
-                kline('*@' + user.host, KLINE_REASON.format(receiver))
+        for regex, reason in REGEX_KLINE:
+            if regex.search(message):
+                kline(
+                    '*@' + user.host,
+                    KLINE_REASON.format(reason, receiver))
                 return
         voice(receiver, user.nick)
         notice(receiver, '{} said: {}', user.nick, censor_string(message))
