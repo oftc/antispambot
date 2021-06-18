@@ -62,6 +62,16 @@ EXTRA_RESPONSE_INTERVAL = 30 * 60
 #: The reason to give for the K-Line. One parameter: it is the channel.
 KLINE_REASON = 'Suspected spammer. Mail support@oftc.net with questions'\
     '|libera non-ascii spam in {} !dronebl'
+#: When redactding a URL, replace the URL with this.
+REDACTED_URL = '<REDACTED URL>'
+#: Regex that mataches on URL-looking things
+REGEX_URL = re.compile('https?://[^\s]+')  # noqa
+
+
+def censor_string(in_str):
+    ''' Slightly censor a string to, e.g., not contain URLs '''
+    in_str = REGEX_URL.sub(REDACTED_URL, in_str)
+    return in_str
 
 
 class LiberaHamModule(Module):
@@ -100,7 +110,7 @@ class LiberaHamModule(Module):
                 kline('*@' + user.host, KLINE_REASON.format(receiver))
                 return
         voice(receiver, user.nick)
-        notice(receiver, '{} said: {}', user.nick, message)
+        notice(receiver, '{} said: {}', user.nick, censor_string(message))
         if time.time() - self.last_extra_resp_ts > EXTRA_RESPONSE_INTERVAL:
             notice(receiver, EXTRA_RESPONSE)
             self.last_extra_resp_ts = time.time()
