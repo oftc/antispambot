@@ -58,7 +58,7 @@ REGEX_KLINE = [
 ]
 #: How often, in seconds, we will allow ourselves to also state the extra
 #: response. This is to make us less of a toy.
-EXTRA_RESPONSE_INTERVAL = 15 * 60
+EXTRA_RESPONSE_INTERVAL = 30 * 60
 #: The reason to give for the K-Line. One parameter: it is the channel.
 KLINE_REASON = 'Suspected spammer. Mail support@oftc.net with questions'\
     '|libera non-ascii spam in {} !dronebl'
