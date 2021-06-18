@@ -325,16 +325,21 @@ def privmsg_cb(data, signal, signal_data):
     if user.nick in ignores():
         # log('Ignore PRIVMSG from {} in {}', user.nick, dest)
         return w.WEECHAT_RC_OK
-    # Try handling the message as a command if it came from a master in a PM or
-    # in our command channel. A master's PM may not be a command, so it is
-    # wrong to return early here.
+    # Try handling the message as a command if it's from a master in a PM or in
+    # the cmd_chan, or respond with the canned auto response if non-master and
+    # PM. Non-masters in our cmd_chan should be ignored.
+    #
+    # A master's PM may not be a command, so it is wrong to return early here.
+    # At least, that's what I wrote before, but now we're doign it. Lol fuck
+    # me.
     if dest == my_nick() or dest == cmd_chan():
+        # handle commands from masters
         if user.nick in masters():
             handle_command(user, dest, message)
-        else:
-            resp_dest = user.nick if dest == my_nick() else cmd_chan()
+        # it's a non-master, if a PM, then do canned response
+        elif dest == my_nick():
             notice(
-                resp_dest, 'I am a bot operated by OFTC netops (mostly '
+                user.nick, 'I am a bot operated by OFTC netops (mostly '
                 'pastly) that blocks the "libera hamradio" spam before '
                 'channels see it. For more information, see {} or ask about '
                 'me in #oftc.', liberaham_url())
