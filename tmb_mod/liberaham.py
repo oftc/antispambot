@@ -110,9 +110,11 @@ class LiberaHamModule(Module):
         # It is indeed spam, so don't voice
         for regex, reason in REGEX_KLINE:
             if regex.search(message):
-                kline(
-                    '*@' + user.host,
-                    KLINE_REASON.format(reason, receiver))
+                reason_for_log = '{} in {}'.format(reason, receiver)
+                mask = '*@' + user.host
+                tmb.log('kline {} ({}) for {}'.format(
+                    mask, user.nick, reason_for_log))
+                kline(mask, KLINE_REASON.format(reason, receiver))
                 return
         voice(receiver, user.nick)
         notice(receiver, '{} said: {}', user.nick, censor_string(message))
