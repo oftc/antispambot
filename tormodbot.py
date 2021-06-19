@@ -217,7 +217,7 @@ def part_cb(data, signal, signal_data):
     return w.WEECHAT_RC_OK
 
 
-def _handle_command_mod(dest, chan):
+def _handle_command_mod(dest, chan, who):
     ''' Handle the 'mod' command from masters, sending any response messages to
     dest. '''
     if not chan:
@@ -227,6 +227,7 @@ def _handle_command_mod(dest, chan):
     chans.add(chan)
     w.config_set_plugin('mod_chans', lcsv(chans))
     notice(dest, 'Okay. mod_chans={}', lcsv(chans))
+    log('{} told me to start modding {}', who, chan)
     mode(my_nick(), '+S')
     join(chan)
     mode(chan, '+o', my_nick())
@@ -234,7 +235,7 @@ def _handle_command_mod(dest, chan):
     mode(my_nick(), '-S')
 
 
-def _handle_command_unmod(dest, chan):
+def _handle_command_unmod(dest, chan, who):
     chans = set(mod_chans())
     if chan not in chans:
         notice(dest, 'Not modding {}', chan)
@@ -242,6 +243,7 @@ def _handle_command_unmod(dest, chan):
     chans.remove(chan)
     w.config_set_plugin('mod_chans', lcsv(chans))
     notice(dest, 'Okay. mod_chans={}', lcsv(chans))
+    log('{} told me to stop modding {}', who, chan)
     close(chan)
 
 
@@ -271,14 +273,14 @@ def handle_command(user, where, message):
         return tmb_help.handle_command(user, where, message)
     elif words[0].lower() == 'mod':
         chan = words[1].lower() if len(words) == 2 else None
-        _handle_command_mod(dest, chan)
+        _handle_command_mod(dest, chan, user.nick)
         return w.WEECHAT_RC_OK
     elif words[0].lower() == 'unmod':
         if len(words) != 2:
             notice(dest, 'Provide one channel name')
             return w.WEECHAT_RC_OK
         chan = words[1].lower()
-        _handle_command_unmod(dest, chan)
+        _handle_command_unmod(dest, chan, user.nick)
         return w.WEECHAT_RC_OK
     # This function should NOT assume that the given message contains a valid
     # command.
