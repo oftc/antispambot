@@ -26,7 +26,6 @@ Docs
    USING
    HACKING
    LIMITATIONS
-   Liberaham module explaination <liberaham>
    License (MIT) <LICENSE>
 
 .. toctree::
