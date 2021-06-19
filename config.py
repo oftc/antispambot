@@ -49,7 +49,7 @@ MSG_RATE = '505'
 CODE_URL = 'https://gitlab.torproject.org/pastly/weechat-tormodbot'
 #: Where more information about the bot's anti-liberaham functionality can be
 #: found
-LIBERAHAM_URL = 'https://tormodbot.pastly.xyz/liberaham.html'
+LIBERAHAM_URL = 'https://oftc.net/AntiSpamBot/'
 
 # ### liberaham.py configuration options ###
 #: Whether to enable the :mod:`tmb_mod.liberaham` module
