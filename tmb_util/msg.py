@@ -94,6 +94,11 @@ def reconnect(server):
     return _send('/reconnect ' + server)
 
 
+def disconnect(server):
+    ''' Send the disconnect command with the given *server* '''
+    return _send('/disconnect ' + server)
+
+
 def oper_w_eval(username, password):
     ''' Send an /oper command within /eval such that variables such as
     ${sec.data.oper_user} can be used in the command. For example::

@@ -18,6 +18,7 @@ w = weechat
 KNOWN_CMDS = [
     'reconnect', 'ping',
     'mod', 'unmod',
+    'die',
 ]
 KNOWN_CMDS.sort()
 #: Main help function calls into these to get help on specific commands
@@ -26,6 +27,7 @@ TOP_LVL_CMDS = {
     'reconnect': lambda s: _help_reconnect(s),
     'mod': lambda s: _help_mod(s),
     'unmod': lambda s: _help_unmod(s),
+    'die': lambda s: _help_die(s),
 }
 for _ in KNOWN_CMDS:
     assert _ in TOP_LVL_CMDS
@@ -56,6 +58,11 @@ def _help_mod(cmd_msg):
 def _help_unmod(cmd_msg):
     ''' Help string for help unmod '''
     return 'Stop moderating and leave the provided channel.'
+
+
+def _help_die(cmd_msg):
+    ''' Help string for help die '''
+    return 'Disconnect from the server and don\'t autoamtically reconnect.'
 
 
 def handle_command(user, where, message):

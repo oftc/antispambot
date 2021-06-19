@@ -10,7 +10,8 @@ import tmb_util.cmdqueue as cmd_q
 import help as tmb_help
 from tmb_util import chanserv
 from tmb_util import userlist
-from tmb_util.msg import notice, join, mode, reconnect, oper_w_eval, close
+from tmb_util.msg import notice, join, mode, reconnect, oper_w_eval, close,\
+    disconnect
 from tmb_util.lcsv import lcsv
 from tmb_util.userstr import UserStr
 
@@ -281,6 +282,10 @@ def handle_command(user, where, message):
             return w.WEECHAT_RC_OK
         chan = words[1].lower()
         _handle_command_unmod(dest, chan, user.nick)
+        return w.WEECHAT_RC_OK
+    elif words[0].lower() == 'die':
+        notice(dest, 'Okay. I won\'t be back. Sorry if I was bad :\'(')
+        disconnect(serv())
         return w.WEECHAT_RC_OK
     # This function should NOT assume that the given message contains a valid
     # command.
